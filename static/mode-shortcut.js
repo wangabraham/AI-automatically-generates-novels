@@ -628,57 +628,6 @@ function applyChanges() {
     closePreviewModal();
 }
 
-// 配置导入导出功能
-function exportConfig() {
-    const config = {
-        shortcuts: JSON.parse(localStorage.getItem('shortcuts') || JSON.stringify(DEFAULT_SHORTCUTS)),
-        scorePrompts: JSON.parse(localStorage.getItem('scorePrompts') || JSON.stringify(DEFAULT_SCORE_PROMPTS)),
-        editorMode: localStorage.getItem('editorMode') || 'professional'
-    };
-
-    const blob = new Blob([JSON.stringify(config, null, 2)], { type: 'text/plain' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'novel-assistant-config.txt';
-    a.click();
-    URL.revokeObjectURL(url);
-}
-
-function importConfig() {
-    const fileInput = $('#importFile');
-    fileInput.click();
-
-    fileInput.off('change').on('change', function(e) {
-        const file = e.target.files[0];
-        if (!file) return;
-
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            try {
-                const config = JSON.parse(e.target.result);
-
-                if (config.shortcuts) {
-                    localStorage.setItem('shortcuts', JSON.stringify(config.shortcuts));
-                }
-                if (config.scorePrompts) {
-                    localStorage.setItem('scorePrompts', JSON.stringify(config.scorePrompts));
-                }
-                if (config.editorMode) {
-                    localStorage.setItem('editorMode', config.editorMode);
-                    updateUIMode(config.editorMode === 'simple');
-                }
-
-                alert('配置导入成功！');
-                location.reload();
-            } catch (error) {
-                alert('配置文件格式错误！');
-            }
-        };
-        reader.readAsText(file);
-        this.value = ''; // 清空input以允许重复导入
-    });
-}
 
 // 页面初始化
 $(document).ready(function() {

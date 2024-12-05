@@ -4,266 +4,7 @@
     <meta charset="UTF-8">
     <title>小说创作助手</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
-    <style>
-:root {
-    --primary-color: #4CAF50;
-    --secondary-color: #2196F3;
-    --danger-color: #ff4444;
-    --border-color: #e0e0e0;
-    --text-color: #333;
-    --bg-light: #f8f9fa;
-    --shadow: 0 2px 4px rgba(0,0,0,0.1);
-    --transition: all 0.3s ease;
-}
-
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-}
-
-body {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-    line-height: 1.6;
-    color: var(--text-color);
-}
-
-.container {
-    display: flex;
-    padding: 15px;
-    gap: 20px;
-    max-width: 1200px;
-    margin: 0 auto;
-}
-
-@media (max-width: 768px) {
-    .container {
-        flex-direction: column;
-    }
-}
-
-.settings-panel {
-    flex: 1;
-    min-width: 250px;
-}
-
-.content-panel {
-    flex: 2;
-}
-
-/* 改进的文本区域样式 */
-.text-area {
-    width: 100%;
-    min-height: 200px;
-    margin: 10px 0;
-    padding: 12px;
-    border: 1px solid var(--border-color);
-    border-radius: 8px;
-    font-family: inherit;
-    resize: vertical;
-    transition: var(--transition);
-}
-
-.text-area:focus {
-    outline: none;
-    border-color: var(--primary-color);
-    box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.2);
-}
-
-/* 改进的折叠面板 */
-.collapsible {
-    cursor: pointer;
-    padding: 12px 15px;
-    background: var(--bg-light);
-    border-radius: 8px;
-    margin-bottom: 8px;
-    transition: var(--transition);
-    position: relative;
-}
-
-.collapsible::after {
-    content: '';
-    position: absolute;
-    right: 15px;
-    top: 50%;
-    transform: translateY(-50%) rotate(0deg);
-    width: 10px;
-    height: 10px;
-    border-right: 2px solid #666;
-    border-bottom: 2px solid #666;
-    transition: var(--transition);
-}
-
-.collapsible.active::after {
-    transform: translateY(-50%) rotate(45deg);
-}
-
-.content {
-    max-height: 0;
-    overflow: hidden;
-    transition: max-height 0.3s ease-out;
-    padding: 0 15px;
-}
-
-.content.show {
-    max-height: 1000px;
-    padding: 15px;
-}
-
-/* 章节容器改进 */
-.chapter-container {
-    border: 1px solid var(--border-color);
-    margin: 15px 0;
-    border-radius: 8px;
-    overflow: hidden;
-    box-shadow: var(--shadow);
-}
-
-.chapter-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 12px 15px;
-    background: var(--bg-light);
-    cursor: pointer;
-    transition: var(--transition);
-}
-
-.chapter-header:hover {
-    background: #eee;
-}
-
-.chapter-content {
-    padding: 15px;
-    transition: var(--transition);
-}
-
-/* 按钮样式改进 */
-button {
-    padding: 8px 16px;
-    margin: 5px;
-    border: none;
-    border-radius: 6px;
-    cursor: pointer;
-    font-weight: 500;
-    transition: var(--transition);
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    min-width: 80px;
-}
-
-button:hover {
-    transform: translateY(-1px);
-    box-shadow: var(--shadow);
-}
-
-.primary-button {
-    background: var(--primary-color);
-    color: white;
-}
-
-.secondary-button {
-    background: var(--secondary-color);
-    color: white;
-}
-
-.danger-button {
-    background: var(--danger-color);
-    color: white;
-}
-
-/* 辅助类 */
-.mt-10 { margin-top: 10px; }
-.mb-10 { margin-bottom: 10px; }
-.hidden { display: none; }
-.flex { display: flex; }
-.flex-wrap { flex-wrap: wrap; }
-.gap-5 { gap: 5px; }
-
-/* 响应式调整 */
-@media (max-width: 480px) {
-    .container {
-        padding: 10px;
-    }
-    
-    button {
-        width: 100%;
-        margin: 5px 0;
-    }
-    
-    .chapter-header {
-        flex-direction: column;
-        text-align: center;
-    }
-}
-
-/* 动画类 */
-.fade-in {
-    animation: fadeIn 0.3s ease-in;
-}
-
-@keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
-}
-
-/* 模态框改进 */
-.preview-modal {
-    display: none;
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    background: white;
-    padding: 20px;
-    border-radius: 12px;
-    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-    z-index: 10001;
-    max-width: 90%;
-    max-height: 90vh;
-    overflow-y: auto;
-}
-
-/* 上下文菜单改进 */
-.context-menu {
-    position: fixed;
-    z-index: 10000;
-    background: white;
-    border-radius: 8px;
-    padding: 5px 0;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-}
-
-.context-menu-item {
-    padding: 8px 20px;
-    cursor: pointer;
-    transition: var(--transition);
-}
-
-.context-menu-item:hover {
-    background: var(--bg-light);
-}
-
-/* 信息提示框改进 */
-.info-box {
-    padding: 12px 15px;
-    margin: 10px 0;
-    background-color: #e3f2fd;
-    border-left: 4px solid var(--secondary-color);
-    border-radius: 8px;
-}
-
-.warning-box {
-    padding: 12px 15px;
-    margin: 10px 0;
-    background-color: #fff3e0;
-    border-left: 4px solid #ff9800;
-    border-radius: 8px;
-}
-
-
-    </style>
+    <link crossorigin="anonymous" media="all" rel="stylesheet" href="{{ url_for('static', filename='cs.css') }}" />
 </head>
 <body>
     <div class="container">
@@ -290,7 +31,7 @@ button:hover {
             <div class="content">
                 <label>大纲提示词：</label>
                 <textarea id="outline-prompt" class="text-area">
-作为一名专业的小说策划，请基于以下信息创建一个完整的小说大纲：
+作为一名专业的网络小说策划，请基于以下信息创建一个富有爆点的小说大纲：
 
 背景设定：
 ${background}
@@ -308,23 +49,26 @@ ${plot}
 ${style}
 
 要求：
-1. 请分析以上设定，提炼出小说的核心主题和冲突
-2. 设计一个引人入胜的故事架构
-3. 规划出3-5个重要的情节转折点
-4. 确保故事的起承转合完整
-5. 考虑到所有主要人物的角色弧光
-6. 符合写作风格的要求
+1. 提炼核心冲突，设计多重矛盾，确保情节高潮迭起
+2. 设计3-5个重大转折点，每个转折都要有强烈的情感冲击
+3. 人物塑造要立体，性格鲜明，确保有显著成长弧光
+4. 构建层层递进的剧情架构，让读者欲罢不能
+5. 设置悬念和伏笔，增强可读性
+6. 情节发展要符合人物性格，避免强行推进
+7. 确保故事节奏张弛有度，高潮与平缓交错
 
-请输出：
-1. 故事梗概（300字左右）
-2. 核心主题阐述（100字左右）
-3. 主要情节脉络（分点列出）
-4. 重要转折点（分点列出）
-5. 结局设计（100字左右）</textarea>
+输出要求：
+1. 故事梗概（500字左右，突出爆点和冲突）
+2. 核心主题（100字，点明深层内涵）
+3. 人物塑造重点（每个主要角色200字）
+4. 主要情节脉络（分点列出，重点突出转折）
+5. 爆点设计（详述3-5个重大转折点）
+6. 高潮铺垫（说明如何层层递进）
+7. 结局构思（200字，要有冲击力）</textarea>
 
                 <label>章节提示词：</label>
                 <textarea id="chapter-prompt" class="text-area">
-作为一名专业的小说编辑，请基于以下信息将大纲扩展为详细的章节细纲：
+作为专业网文作家，请基于如下信息将大纲展开为详细的章节细纲：
 
 当前小说大纲：
 ${outline}
@@ -344,38 +88,41 @@ ${plot}
 写作风格：
 ${style}
 
-要求：
-1. 将大纲划分为合理的章节（每章2000-3000字的内容量）
-2. 为每个章节设计详细的情节发展
-3. 确保每个章节都有明确的主题和冲突
-4. 安排适当的人物出场和互动
-5. 设计场景转换和时间线
-6. 为每个章节设计开头和结尾的钩子
+创作要求：
+1. 每章字数控制在3000-4000字
+2. 每章必须包含以下要素：
+   - 新鲜看点或冲突
+   - 人物互动与成长
+   - 情感渲染与升华
+   - 悬念设置与推进
+3. 场景转换要自然流畅
+4. 确保每章都有独立吸引力
+5. 为下章预留引子
+6. 注重细节描写和氛围营造
+7. 保持剧情节奏变化
+8. 设置巧妙的伏笔
 
-请使用 ###fenge  来分隔每个章节的内容
-
-请按以下格式输出每个章节的细纲：
+请使用 ###fenge 分隔章节，按以下格式输出：
 
 ###fenge
-第X章：[章节标题]
-- 章节主题：
-- 时间地点：
-- 出场人物：
-- 主要事件：
-- 情节发展：
-  1. 开篇：
-  2. 发展：
-  3. 高潮：
-  4. 结尾：
-- 与上下章关联：
-- 伏笔/铺垫：
-###fenge
-	
-		</textarea>
+第X章：[富有吸引力的章节标题]
+- 核心看点：[本章最吸引人的亮点]
+- 时间地点：[具体场景设定]
+- 出场人物：[主要角色及作用]
+- 情节线索：
+  1. 开篇引子：[如何吸引读者]
+  2. 剧情发展：[详细事件推进]
+  3. 高潮转折：[冲突或爆点]
+  4. 结尾悬念：[为下章预留引子]
+- 感情线发展：[情感变化与渲染]
+- 人物刻画重点：[性格特征展现]
+- 场景氛围：[环境描写重点]
+- 伏笔设置：[后文呼应点]
+###fenge</textarea>
 
                 <label>内容提示词：</label>
                 <textarea id="content-prompt" class="text-area">
-作为一名专业的小说家，请基于以下信息将章节细纲扩展为精彩的小说内容：
+作为一位畅销网文作家，请基于以下信息创作出令人沉浸的章节内容：
 
 总体大纲：
 ${outline}
@@ -398,22 +145,43 @@ ${plot}
 写作风格：
 ${style}
 
-要求：
-1. 严格按照写作风格进行创作
-2. 场景描写要细致生动
-3. 人物对话要符合性格特征
-4. 情节推进要自然流畅
-5. 感情描写要细腻真实
-6. 注意承上启下的过渡
-7. 保持叙事节奏的变化
-8. 营造适当的氛围和情绪
+创作要求：
+1. 用多感官描写营造沉浸感：
+   - 视觉：场景细节、人物表情、动作特写
+   - 听觉：环境声音、语气语调
+   - 触觉：物理感受、温度变化
+   - 心理：情绪流转、思维变化
 
-请创作出完整的章节内容，确保：
-1. 符合细纲规划的情节发展
-2. 包含丰富的细节描写
-3. 人物性格表现准确
-4. 情节推进合理自然
-5. 保持前后章节的连贯性</textarea>
+2. 对话要求：
+   - 体现人物性格特征
+   - 包含潜台词与弦外之音
+   - 避免生硬说教
+   - 通过对话推进剧情
+
+3. 场景描写：
+   - 突出关键细节
+   - 烘托故事氛围
+   - 与情节发展呼应
+   - 适度简繁得当
+
+4. 情节节奏：
+   - 开篇要有吸引力
+   - 高潮情节详写
+   - 过渡段落简洁
+   - 结尾留有余韵
+
+5. 情感刻画：
+   - 细腻展现心理活动
+   - 避免直白表达
+   - 通过细节烘托情绪
+   - 让读者感同身受
+
+请确保：
+1. 符合网文特点，爽点明确
+2. 避免机械化语言
+3. 感情真实自然
+4. 场景细节丰富
+5. 人物个性鲜明</textarea>
             </div>
 
             <div class="collapsible">右键菜单配置</div>
@@ -422,16 +190,36 @@ ${style}
                 <textarea id="outline-menu-config" class="text-area">{
     "menu": [
         {
-            "name": "增加冲突点",
-            "prompt": "基于以下背景：${background}\n人物设定：${characters}\n角色关系：${relationships}\n为选中的内容增加冲突点：${selected_text}"
+            "name": "AI评分",
+            "prompt": "请对以下大纲进行100分制评分，评分项包括：\n1. 故事结构完整性\n2. 冲突设置的合理性\n3. 人物塑造的立体度\n4. 情节发展的吸引力\n5. 主题深度\n\n大纲内容：${selected_text}\n\n背景设定：${background}"
         },
         {
-            "name": "扩展情节",
-            "prompt": "基于当前剧情：${plot}\n为选中的内容扩展情节：${selected_text}"
+            "name": "深化冲突",
+            "prompt": "基于背景：${background}\n人物：${characters}\n在保持合理性的前提下，将以下内容的冲突升级，制造更强的戏剧性：${selected_text}"
         },
         {
-            "name": "深化主题",
-            "prompt": "基于写作风格：${style}\n为选中的内容深化主题：${selected_text}"
+            "name": "增加伏笔",
+            "prompt": "分析剧情：${plot}\n为以下内容设计巧妙的伏笔，为后续发展埋下种子：${selected_text}"
+        },
+        {
+            "name": "完善人物动机",
+            "prompt": "基于人物性格：${characters}\n关系：${relationships}\n补充和优化以下内容中人物的行动动机，使其更符合性格：${selected_text}"
+        },
+        {
+            "name": "强化感情线",
+            "prompt": "基于角色关系：${relationships}\n加强以下内容中的感情发展，让感情线更吸引人：${selected_text}"
+        },
+        {
+            "name": "优化节奏",
+            "prompt": "分析当前剧情走向，调整以下内容的节奏安排，确保张弛有度：${selected_text}"
+        },
+        {
+            "name": "扩充细节",
+            "prompt": "基于背景：${background}\n为以下内容补充更多细节，增强画面感和沉浸感：${selected_text}"
+        },
+        {
+            "name": "提升高潮",
+            "prompt": "在符合逻辑的前提下，将以下内容的高潮部分改写得更加震撼：${selected_text}"
         }
     ]
 }</textarea>
@@ -440,16 +228,36 @@ ${style}
                 <textarea id="chapter-menu-config" class="text-area">{
     "menu": [
         {
-            "name": "丰富细节",
-            "prompt": "基于大纲：${outline}\n人物设定：${characters}\n为选中的章节添加更多细节：${selected_text}"
+            "name": "AI评分",
+            "prompt": "请对以下章节细纲进行100分制评分。评分项：\n1. 章节结构完整性\n2. 情节安排合理性\n3. 人物刻画深度\n4. 悬念设置效果\n5. 与整体剧情的契合度\n\n章节内容：${selected_text}\n\n大纲背景：${outline}"
         },
         {
-            "name": "增加人物互动",
-            "prompt": "基于角色关系：${relationships}\n在选中的内容中增加人物互动：${selected_text}"
+            "name": "深化情节",
+            "prompt": "基于大纲：${outline}\n角色关系：${relationships}\n将以下章节的情节发展变得更加吸引人：${selected_text}"
         },
         {
-            "name": "完善结构",
-            "prompt": "基于写作风格：${style}\n为选中的章节完善结构：${selected_text}"
+            "name": "强化冲突",
+            "prompt": "基于人物性格：${characters}\n将以下章节的矛盾冲突升级，制造更强的戏剧效果：${selected_text}"
+        },
+        {
+            "name": "优化结构",
+            "prompt": "分析当前章节定位，调整以下内容的结构，使其更加完整：${selected_text}"
+        },
+        {
+            "name": "增加细节",
+            "prompt": "基于场景背景：${background}\n为以下章节添加更多细节描写，增强画面感：${selected_text}"
+        },
+        {
+            "name": "完善对话",
+            "prompt": "基于角色关系：${relationships}\n优化以下内容中的对话设计，突出人物性格：${selected_text}"
+        },
+        {
+            "name": "设置伏笔",
+            "prompt": "分析整体剧情：${plot}\n为以下章节设置巧妙的伏笔，为后续发展做铺垫：${selected_text}"
+        },
+        {
+            "name": "强化感情",
+            "prompt": "基于人物关系：${relationships}\n加强以下章节中的感情描写，增添情感冲击力：${selected_text}"
         }
     ]
 }</textarea>
@@ -458,22 +266,43 @@ ${style}
                 <textarea id="content-menu-config" class="text-area">{
     "menu": [
         {
-            "name": "扩展描写",
-            "prompt": "基于人物设定：${characters}\n写作风格：${style}\n扩展选中内容的描写：${selected_text}"
+            "name": "AI评分",
+            "prompt": "请对以下内容进行100分制评分。评分项：\n1. 文字流畅度\n2. 场景描写生动性\n3. 人物刻画真实感\n4. 情感表达深度\n5. 是否有AI痕迹\n\n内容：${selected_text}\n\n写作风格：${style}"
         },
         {
-            "name": "优化对话",
-            "prompt": "基于角色关系：${relationships}\n优化选中内容中的对话：${selected_text}"
+            "name": "优化文笔",
+            "prompt": "基于写作风格：${style}\n将以下内容改写得更加优美流畅，去除机械痕迹：${selected_text}"
         },
         {
-            "name": "加强情感",
-            "prompt": "基于背景：${background}\n剧情：${plot}\n加强选中内容的情感表达：${selected_text}"
+            "name": "扩写对话",
+            "prompt": "基于人物性格：${characters}\n关系：${relationships}\n将以下对话场景扩写得更加生动，体现人物性格：${selected_text}"
+        },
+        {
+            "name": "强化情感",
+            "prompt": "结合人物关系：${relationships}\n将以下内容的情感描写变得更加细腻动人：${selected_text}"
+        },
+        {
+            "name": "添加细节",
+            "prompt": "基于场景背景：${background}\n为以下内容添加更多感官细节，增强画面感：${selected_text}"
+        },
+        {
+            "name": "改写视角",
+            "prompt": "保持原有剧情，将以下内容改写为更吸引人的视角：${selected_text}"
+        },
+        {
+            "name": "去除说教",
+            "prompt": "将以下内容中说教性的描写改写为更自然的表达：${selected_text}"
+        },
+        {
+            "name": "润色升华",
+            "prompt": "基于主题：${plot}\n将以下内容升华改写，增强文学性：${selected_text}"
         }
     ]
 }</textarea>
             </div>
         </div>
         
+        <!-- 其余代码保持不变 -->
         <div class="content-panel">
             <div>
                 <h3>大纲</h3>
@@ -483,7 +312,9 @@ ${style}
                     <button onclick="regenerateOutline()">重写大纲</button>
                     <button onclick="generateChaptersFromOutline()">根据大纲生成章节</button>
                     <button onclick="resetAll()" class="reset-button">重置所有内容</button>
-                </div>
+
+
+</div>
             </div>
 
             <div id="chapter-temp-container" class="chapter-temp-container" style="display: none;">
@@ -523,28 +354,47 @@ ${style}
         <div class="chapter-buttons">
             <button onclick="applyChanges()">应用</button>
             <button onclick="closePreview()">取消</button>
-
-
-	    </div>
+        </div>
+    </div>
 
     <script>
         // 保存当前状态到localStorage
         function saveState() {
             const state = {
+                // 基础设置
                 background: $('#background').val(),
                 characters: $('#characters').val(),
                 relationships: $('#relationships').val(),
                 plot: $('#plot').val(),
                 style: $('#style').val(),
+                
+                // 提示词配置
                 outlinePrompt: $('#outline-prompt').val(),
                 chapterPrompt: $('#chapter-prompt').val(),
                 contentPrompt: $('#content-prompt').val(),
+                
+                // 右键菜单配置
+                outlineMenuConfig: $('#outline-menu-config').val(),
+                chapterMenuConfig: $('#chapter-menu-config').val(),
+                contentMenuConfig: $('#content-menu-config').val(),
+                
+                // 内容数据
                 outline: $('#outline').val(),
                 tempContent: $('#chapter-temp-content').val(),
                 tempContainerVisible: $('#chapter-temp-container').is(':visible'),
+                
+                // 保存右键菜单的当前状态
+                menuStates: {
+                    outline: JSON.parse($('#outline-menu-config').val()),
+                    chapter: JSON.parse($('#chapter-menu-config').val()),
+                    content: JSON.parse($('#content-menu-config').val())
+                },
+                
+                // 章节数据
                 chapters: []
             };
 
+            // 保存所有章节的状态
             $('.chapter-container').each(function() {
                 state.chapters.push({
                     outline: $(this).find('.chapter-outline').val(),
@@ -553,35 +403,89 @@ ${style}
                 });
             });
 
-            localStorage.setItem('novelState', JSON.stringify(state));
+            try {
+                localStorage.setItem('novelState', JSON.stringify(state));
+            } catch (e) {
+                console.error('保存状态失败:', e);
+                alert('保存状态失败，请检查浏览器存储空间是否足够');
+            }
         }
 
         // 从localStorage加载状态
         function loadState() {
-            const state = JSON.parse(localStorage.getItem('novelState'));
-            if (state) {
-                $('#background').val(state.background);
-                $('#characters').val(state.characters);
-                $('#relationships').val(state.relationships);
-                $('#plot').val(state.plot);
-                $('#style').val(state.style);
-                $('#outline-prompt').val(state.outlinePrompt);
-                $('#chapter-prompt').val(state.chapterPrompt);
-                $('#content-prompt').val(state.contentPrompt);
-                $('#outline').val(state.outline);
-                $('#chapter-temp-content').val(state.tempContent || '');
+            try {
+                const state = JSON.parse(localStorage.getItem('novelState'));
+                if (state) {
+                    // 加载基础设置
+                    $('#background').val(state.background || '');
+                    $('#characters').val(state.characters || '');
+                    $('#relationships').val(state.relationships || '');
+                    $('#plot').val(state.plot || '');
+                    $('#style').val(state.style || '');
+                    
+                    // 加载提示词配置
+                    $('#outline-prompt').val(state.outlinePrompt || $('#outline-prompt').val());
+                    $('#chapter-prompt').val(state.chapterPrompt || $('#chapter-prompt').val());
+                    $('#content-prompt').val(state.contentPrompt || $('#content-prompt').val());
+                    
+                    // 加载右键菜单配置
+                    if (state.outlineMenuConfig) {
+                        $('#outline-menu-config').val(state.outlineMenuConfig);
+                    }
+                    if (state.chapterMenuConfig) {
+                        $('#chapter-menu-config').val(state.chapterMenuConfig);
+                    }
+                    if (state.contentMenuConfig) {
+                        $('#content-menu-config').val(state.contentMenuConfig);
+                    }
+                    
+                    // 加载内容数据
+                    $('#outline').val(state.outline || '');
+                    $('#chapter-temp-content').val(state.tempContent || '');
+                    
+                    // 加载临时容器状态
+                    if (state.tempContainerVisible) {
+                        $('#chapter-temp-container').show();
+                    } else {
+                        $('#chapter-temp-container').hide();
+                    }
+                    
+                    // 加载章节数据
+                    $('#chapters').empty();
+                    if (Array.isArray(state.chapters)) {
+                        state.chapters.forEach(chapter => {
+                            addChapterWithContent(
+                                chapter.outline || '', 
+                                chapter.content || '', 
+                                chapter.isCollapsed || false
+                            );
+                        });
+                    }
 
-                if (state.tempContainerVisible) {
-                    $('#chapter-temp-container').show();
+                    // 初始化右键菜单状态
+                    try {
+                        if (state.menuStates) {
+                            // 确保菜单配置是有效的JSON
+                            if (state.menuStates.outline) {
+                                $('#outline-menu-config').val(JSON.stringify(state.menuStates.outline, null, 4));
+                            }
+                            if (state.menuStates.chapter) {
+                                $('#chapter-menu-config').val(JSON.stringify(state.menuStates.chapter, null, 4));
+                            }
+                            if (state.menuStates.content) {
+                                $('#content-menu-config').val(JSON.stringify(state.menuStates.content, null, 4));
+                            }
+                        }
+                    } catch (e) {
+                        console.error('加载菜单状态失败:', e);
+                        // 如果加载失败，保持默认菜单配置
+                    }
                 }
-
-                $('#chapters').empty();
-                state.chapters.forEach(chapter => {
-                    addChapterWithContent(chapter.outline, chapter.content, chapter.isCollapsed);
-                });
+            } catch (e) {
+                console.error('加载状态失败:', e);
+                alert('加载状态失败，将使用默认配置');
             }
         }
-
         // 生成大纲
         async function generateOutline() {
             const prompt = $('#outline-prompt').val()
@@ -1155,5 +1059,9 @@ function showContextMenu(e, config, target) {
     }
 }
     </script>
+<script src="{{ url_for('static', filename='outin.js') }}"></script>
+<script src="{{ url_for('static', filename='bookinfo.js') }}"></script>
+<script src="{{ url_for('static', filename='mode-shortcut.js') }}"></script>
+
 </body>
 </html>

@@ -1,63 +1,68 @@
 from flask import Flask, request, Response, render_template
-import dashscope
+import requests
 import json
 import logging
-from http import HTTPStatus
-from dashscope import Generation
 
 app = Flask(__name__)
 logging.basicConfig(level=logging.DEBUG)
 
-# 配置DashScope API密钥
-DASHSCOPE_API_KEY = "your-api-key-here"
-dashscope.api_key = DASHSCOPE_API_KEY
+# 通义千问API URL
+TONGYI_QIANWEN_API_URL = "https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions"
+
+# 配置API密钥
+API_KEY = ""  # 请替换为您的API密钥
 
 @app.route('/')
 def index():
     return render_template('index.html')
 
 @app.route('/gen', methods=['POST'])
-def generate():
+def generate_stream():
     data = request.json
     prompt = data.get('prompt', '')
     app.logger.debug(f"Received prompt: {prompt}")
 
-    def generate_stream():
+    def generate_stream_inner(prompt):
         try:
             # 创建Qianwen API请求
-            responses = Generation.call(
-                model='qwen-max',  # 或其他可用模型
-                prompt=prompt,
-                result_format='message',  # 使用消息格式
-                stream=True,
-                top_p=0.8,
-                temperature=0.7,
-                max_tokens=1500,
-                stop=None,
-                api_key=DASHSCOPE_API_KEY
+            headers = {
+                "Authorization": f"Bearer {API_KEY}",
+                "Content-Type": "application/json"
+            }
+            response = requests.post(
+                TONGYI_QIANWEN_API_URL,
+                headers=headers,
+                json={
+                    "model": "qwen-max",  # 使用qwen-max模型
+                    "messages": [{"role": "user", "content": prompt}],
+                    "stream": True
+                },
+                stream=True
             )
             
             # 处理流式响应
-            for response in responses:
-                if response.status_code == HTTPStatus.OK:
-                    # 转换响应格式以匹配原有格式
-                    if response.output and response.output.text:
-                        response_chunk = {
-                            'response': response.output.text
-                        }
-                        app.logger.debug(f"Yielding response: {response.output.text}")
-                        yield json.dumps(response_chunk) + '\n'
-                else:
-                    error_msg = f"Error: {response.code} - {response.message}"
-                    app.logger.error(error_msg)
-                    yield json.dumps({'response': error_msg}) + '\n'
-                    
+            for line in response.iter_lines(decode_unicode=True):
+                if line:
+                    line = line.strip()  # 去除可能的空白字符
+                    if line.startswith('data: '):
+                        line = line[6:]  # 移除'data: '前缀
+                        try:
+                            json_response = json.loads(line)
+                            if 'choices' in json_response and 'delta' in json_response['choices'][0]:
+                                response_text = json_response['choices'][0]['delta']['content']
+                                # 逐个字符输出，并在适当的位置添加换行符
+                                for char in response_text:
+                                    if char == '\n':
+                                        yield ' '  # 将换行符替换为空格，避免前端显示问题
+                                    else:
+                                        yield char
+                        except json.JSONDecodeError as e:
+                            app.logger.error(f"JSON decode error: {e}, Line: {line}")
         except Exception as e:
-            error_msg = f"Error: {str(e)}"
             app.logger.error(f"Error in generate_stream: {e}")
-            yield json.dumps({'response': error_msg}) + '\n'
+            yield str(e)  # 直接yield错误信息
 
-    return Response(generate_stream(), mimetype='application/json-stream')
+    return Response(generate_stream_inner(prompt), mimetype='text/event-stream')
 
 if __name__ == '__main__':
     app.run(debug=True, port=20000, host="0.0.0.0")

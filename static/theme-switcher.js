@@ -184,7 +184,7 @@ class EnhancedStyleSwitcher {
         
         const switcherHTML = `
             <div class="theme-ball">
-                <div class="theme-text">主题切换</div>
+                <div class="theme-text">主题切换,可拖拽</div>
                 <div class="theme-menu">
                     <div class="menu-section">
                         <h3>主题风格</h3>

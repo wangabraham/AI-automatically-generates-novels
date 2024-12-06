@@ -227,9 +227,15 @@ addSwitcherStyles() {
         const styles = document.createElement('style');
         styles.textContent = `
             .enhanced-theme-switcher {
-                position: fixed;
-                right: 20px;
-                bottom: 20px;
+    pointer-events: auto;
+    touch-action: none;
+    user-select: none;
+    pointer-events: auto;
+    touch-action: none;
+    user-select: none;
+                position: fixed !important;
+                right: 20px !important;
+                bottom: 20px !important;
                 z-index: 9999;
             }
 
@@ -266,14 +272,14 @@ addSwitcherStyles() {
                 right: 0;
                 background: white;
                 border-radius: 16px;
-                padding: 20px;
+                padding: 15px;
                 margin-bottom: 15px;
                 box-shadow: var(--shadow);
                 display: none;
                 flex-direction: column;
-                gap: 15px;
-                min-width: 250px;
-                max-width: 350px;
+                gap: 10px;
+                min-width: 200px;
+                max-width: 280px;
                 backdrop-filter: blur(10px);
                 background: rgba(255, 255, 255, 0.98);
                 border: 1px solid var(--border-color);
@@ -309,8 +315,8 @@ addSwitcherStyles() {
 
             .theme-btn, .layout-btn, .settings-btn, .edit-btn {
                 width: 100%;
-                padding: 12px;
-                margin: 5px 0;
+                padding: 8px;
+                margin: 3px 0;
                 border: none;
                 border-radius: 8px;
                 cursor: pointer;
@@ -359,13 +365,19 @@ addSwitcherStyles() {
             }
 
             .focus-mode .text-area:focus {
-                position: fixed;
+    min-height: 200px;
+    max-height: 600px;
+    overflow-y: auto;
+    min-height: 200px;
+    max-height: 600px;
+    overflow-y: auto;
+                position: fixed !important;
                 top: 50%;
                 left: 50%;
                 transform: translate(-50%, -50%);
-                width: 90%;
-                max-width: 800px;
-                height: 80vh;
+                width: 80%;
+                max-width: 700px;
+                height: 60vh; max-height: 600px;
                 z-index: 1000;
                 background: var(--bg-light);
                 box-shadow: var(--shadow-hover);
@@ -374,7 +386,7 @@ addSwitcherStyles() {
             /* 遮罩层 */
             .overlay {
                 display: none;
-                position: fixed;
+                position: fixed !important;
                 top: 0;
                 left: 0;
                 width: 100%;
@@ -389,19 +401,37 @@ addSwitcherStyles() {
             }
 
             /* 自动居中模式 */
-            .auto-center .text-area:focus {
+.auto-center .text-area:focus {
+    position: relative;
+    top: 50%;
+    transform: translateY(-50%);
+    margin: 20px auto;
+    width: 80%;
+    max-width: 700px;
+    min-height: 200px;
+    max-height: 500px;
+    overflow-y: auto;
+    position: relative;
+    top: 50%;
+    transform: translateY(-50%);
+    margin: 20px auto;
+    width: 80%;
+    max-width: 700px;
+    min-height: 200px;
+    max-height: 500px;
+    overflow-y: auto;
                 position: relative;
                 top: 50%;
                 transform: translateY(-50%);
                 margin: 20px auto;
-                width: 90%;
-                max-width: 800px;
+                width: 80%;
+                max-width: 700px;
             }
 
             /* 响应式设计 */
             @media (max-width: 768px) {
                 .theme-menu {
-                    position: fixed;
+                    position: fixed !important;
                     bottom: 100px;
                     right: 10px;
                     width: calc(100% - 20px);
@@ -409,6 +439,12 @@ addSwitcherStyles() {
                 }
 
                 .focus-mode .text-area:focus {
+    min-height: 200px;
+    max-height: 600px;
+    overflow-y: auto;
+    min-height: 200px;
+    max-height: 600px;
+    overflow-y: auto;
                     width: 95%;
                     height: 70vh;
                 }
@@ -880,9 +916,9 @@ applyTheme(themeName) {
             notificationStyles.id = 'notification-styles';
             notificationStyles.textContent = `
                 .notification-container {
-                    position: fixed;
+                    position: fixed !important;
                     top: 20px;
-                    right: 20px;
+                    right: 20px !important;
                     z-index: 10000;
                 }
 

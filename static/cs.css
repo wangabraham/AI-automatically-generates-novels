@@ -47,7 +47,7 @@ body {
 /* 改进的文本区域样式 */
 .text-area {
     width: 100%;
-    min-height: 200px;
+    min-height: 100px;
     margin: 10px 0;
     padding: 12px;
     border: 1px solid var(--border-color);

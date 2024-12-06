@@ -1,6 +1,18 @@
 # AI 小说创作助手 (AI Novel Writing Assistant)
 
-一个基于 AI 的智能小说创作辅助工具，通过 AI 技术提升创作效率，效率提升20倍，让写作更轻松、更专业。现已升级到 v2.0。
+一个基于ai +提示词 的智能小说创作辅助工具，通过 AI 技术提升创作效率以及完善的提示词管理功能，效率提升20倍，让写作更轻松、更专业。现已升级到 v2.0。
+
+支持任何主流大模型接入
+
+在线体验 http://ssss.baby:20000
+
+app.py 接入相关的模型，请使用chatgpt来生成相关的和模型想匹配的代码
+
+## app.py 提示词 
+ $app.py源码
+ api地址 http://XXXX
+ ai模型为XXXX 
+ 根据这个，请帮我生成【阿里千问|文心一言|豆包】相关的api，同样需要支持流，要注意可能的参数 私钥参数等不一样。原来的返回格式最好和我给你的兼容，这个需要特别注意
 
 ## 功能速览
 
@@ -13,9 +25,6 @@
 ![智能简介生成](jpg/ai生成简介.png)
 *AI智能简介生成功能展示*
 
-## 联系方式
-
-![图片](jpg/二维码.png)
 
 
 ## 核心特色：专业提示词系统
@@ -174,54 +183,6 @@ project/
 
 本系统支持多种主流AI模型，您可以根据需求选择不同的模型：
 
-1. **ChatGPT (app-chatgpt.py)**
-   - OpenAI的GPT模型支持
-   - 支持GPT-3.5和GPT-4
-   - 可配置API密钥和模型参数
-   ```python
-   # app-chatgpt.py 配置示例
-   OPENAI_API_KEY = "your-api-key"
-   MODEL = "gpt-3.5-turbo"  # 或 "gpt-4"
-   ```
-
-2. **Claude (app-claude.py)**
-   - Anthropic的Claude模型支持
-   - 支持Claude 2和Claude 3
-   - 精确的推理和写作能力
-   ```python
-   # app-claude.py 配置示例
-   CLAUDE_API_KEY = "your-api-key"
-   MODEL = "claude-3-opus-20240229"  # 或其他版本
-   ```
-
-3. **文心一言 (app-wenxinyiyang.py)**
-   - 百度文心大模型支持
-   - 中文创作优化
-   - 适合国内用户使用
-   ```python
-   # app-wenxinyiyang.py 配置示例
-   WENXIN_API_KEY = "your-api-key"
-   WENXIN_SECRET_KEY = "your-secret-key"
-   ```
-
-4. **通义千问 (app-tongyiqianwen.py)**
-   - 阿里通义千问模型支持
-   - 强大的中文理解能力
-   - 适合长文本创作
-   ```python
-   # app-tongyiqianwen.py 配置示例
-   TONGYI_API_KEY = "your-api-key"
-   ```
-
-5. **豆包 (app-doubao.py)**
-   - 字节跳动豆包大模型
-   - 创新的中文写作能力
-   - 适合网文创作
-   ```python
-   # app-doubao.py 配置示例
-   DOUBAO_API_KEY = "your-api-key"
-   ```
-
 ### 模型切换使用说明
 
 ```
@@ -246,23 +207,6 @@ python app.py
 | 通义千问 | 中文创作自然 | 网文创作 | 按量计费 |
 | 豆包 | 网文风格强 | 网络小说创作 | 按量计费 |
 
-### 使用建议
-
-1. **模型选择**
-- 对文学性要求高的作品推荐使用 Claude
-- 中文网文创作推荐使用豆包或通义千问
-- 追求性价比可以使用 ChatGPT 3.5
-- 需要稳定性的可以使用文心一言
-
-2. **参数优化**
-- 每个模型都有独特的参数设置
-- 建议根据创作需求调整温度等参数
-- 可以通过配置文件微调模型行为
-
-3. **成本控制**
-- 建议先使用较低成本的模型测试
-- 重要章节再使用更高级的模型
-- 可以混合使用不同模型降低成本
 
 
 ## 版本历史
@@ -282,5 +226,8 @@ python app.py
 MIT License
 
 ## 问题反馈
+
+![图片](jpg/二维码.png)
+
 - 项目主页：[GitHub](https://github.com/wfcz10086/AI-automatically-generates-novels)
 - 问题反馈：[Issues](https://github.com/wfcz10086/AI-automatically-generates-novels/issues)

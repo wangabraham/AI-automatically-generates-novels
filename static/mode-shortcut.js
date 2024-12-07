@@ -8,39 +8,6 @@ const DEFAULT_SHORTCUTS = [
     "丰富人物描写??人物+外貌/神态/动作+比喻/象征/夸张"
 ];
 
-const DEFAULT_HOTKEYS = [
-    { key: 'Shift+L', description: '打开快捷短语菜单' },
-    { key: 'Ctrl+B', description: '加粗选中文本' },
-    { key: 'Ctrl+I', description: '斜体选中文本' },
-    { key: 'Ctrl+K', description: '插入链接' }
-];
-
-const DEFAULT_SCORE_PROMPTS = {
-    outline: `请对以下章节细纲进行100分制评分，评分维度包括：
-1. 情节连贯性 (20分)
-2. 人物塑造 (20分)
-3. 冲突设置 (20分)
-4. 悬念铺垫 (20分)
-5. 细节描写 (20分)
-
-请给出详细的评分理由和改进建议。
-
-章节细纲内容：
-{content}`,
-    
-    content: `请对以下章节正文进行100分制评分，评分维度包括：
-1. 文字流畅度 (20分)
-2. 场景描写 (20分)
-3. 人物刻画 (20分)
-4. 情感表达 (20分)
-5. 整体结构 (20分)
-
-请给出详细的评分理由和改进建议。
-
-章节正文内容：
-{content}`
-};
-
 // 注入CSS样式
 const styles = `
     /* 悬浮球样式 */
@@ -200,68 +167,9 @@ const styles = `
         margin-bottom: 10px;
     }
 
-    /* 列表项样式 */
-    .list-item {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 8px;
-        border-bottom: 1px solid #eee;
-        transition: background-color 0.3s;
-    }
-
-    .list-item:hover {
-        background-color: #f5f5f5;
-    }
-
-    .item-content {
-        flex-grow: 1;
-        margin-right: 10px;
-    }
-
-    .delete-button {
-        background: #ff4444;
-        color: white;
-        border: none;
-        padding: 4px 8px;
-        border-radius: 4px;
-        cursor: pointer;
-    }
-
-    .delete-button:hover {
-        background: #cc0000;
-    }
-
-    /* 添加按钮组样式 */
-    .add-item-group {
-        display: flex;
-        gap: 10px;
-        margin-top: 15px;
-    }
-
-    .add-item-input {
-        flex-grow: 1;
-        padding: 8px;
-        border: 1px solid #ddd;
-        border-radius: 4px;
-    }
-
-    .add-button {
-        background: #4CAF50;
-        color: white;
-        border: none;
-        padding: 8px 15px;
-        border-radius: 4px;
-        cursor: pointer;
-    }
-
-    .add-button:hover {
-        background: #45a049;
-    }
-
     /* 快捷短语下拉框样式 */
     #shortcuts-dropdown {
-        position: fixed;
+        position: absolute;
         z-index: 1100;
         background: white;
         border: 1px solid #ccc;
@@ -272,15 +180,6 @@ const styles = `
         max-height: 400px;
         overflow-y: auto;
         display: none;
-    }
-
-    /* 简易模式样式 */
-    .simple-mode .hide-in-simple {
-        display: none !important;
-    }
-
-    .simple-mode .show-in-simple {
-        display: block !important;
     }
 
     /* 导入导出样式 */
@@ -298,6 +197,20 @@ const styles = `
         border-radius: 4px;
         margin-top: 10px;
         font-family: monospace;
+    }
+
+    .list-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 8px;
+        border-bottom: 1px solid #eee;
+        transition: background-color 0.3s;
+        cursor: pointer;
+    }
+
+    .list-item:hover {
+        background-color: #f5f5f5;
     }
 `;
 
@@ -323,7 +236,6 @@ function initializeElements() {
                 <span id="mode-text">专业模式</span>
             </div>
             <button class="menu-item" onclick="toggleShortcutsModal()">快捷短语管理</button>
-            <button class="menu-item" onclick="toggleHotkeysModal()">快捷键设置</button>
             <button class="menu-item" onclick="toggleImportExportModal()">导入导出设置</button>
         </div>
 
@@ -338,20 +250,6 @@ function initializeElements() {
             <div class="add-item-group">
                 <input type="text" class="add-item-input" id="new-shortcut" placeholder="输入新的快捷短语">
                 <button class="add-button" onclick="addShortcut()">添加</button>
-            </div>
-        </div>
-
-        <!-- 快捷键设置窗口 -->
-        <div class="management-modal" id="hotkeys-modal">
-            <div class="modal-header">
-                <h3>快捷键设置</h3>
-                <button class="close-button" onclick="closeModal('hotkeys-modal')">&times;</button>
-            </div>
-            <div id="hotkeys-list"></div>
-            <div class="add-item-group">
-                <input type="text" class="add-item-input" id="new-hotkey-key" placeholder="按键组合 (例如: Ctrl+B)">
-                <input type="text" class="add-item-input" id="new-hotkey-desc" placeholder="功能描述">
-                <button class="add-button" onclick="addHotkey()">添加</button>
             </div>
         </div>
 
@@ -415,20 +313,79 @@ function initializeEvents() {
         }
     });
 
-    // 快捷键绑定
+    // Shift+L 快捷键处理
+    let shiftLPressed = false;
     $(document).on('keydown', function(e) {
-        if (e.shiftKey && e.key.toLowerCase() === 'l') {
+        if (e.shiftKey && e.key.toLowerCase() === 'l' && !shiftLPressed) {
+            shiftLPressed = true;
             const activeElement = document.activeElement;
-            if (activeElement.tagName === 'TEXTAREA') {
-                showShortcutsDropdown(activeElement);
+            console.log('Active element:', activeElement);
+            console.log('Active element tag:', activeElement.tagName);
+            console.log('Active element id:', activeElement.id);
+            console.log('Active element class:', activeElement.className);
+            
+            if (activeElement.tagName === 'TEXTAREA' || activeElement.tagName === 'INPUT') {
                 e.preventDefault();
+                const selection = {
+                    start: activeElement.selectionStart,
+                    end: activeElement.selectionEnd
+                };
+                console.log('Selection:', selection);
+                
+                // 获取光标位置
+                const caretPos = getCursorPosition(activeElement);
+                console.log('Caret position:', caretPos);
+                
+                showShortcutsDropdown(activeElement, caretPos);
             }
         }
     });
-// 初始化模式
+
+    $(document).on('keyup', function(e) {
+        if (e.key.toLowerCase() === 'l') {
+            shiftLPressed = false;
+        }
+    });
+
+    // 初始化模式
     const savedMode = localStorage.getItem('editorMode') || 'professional';
     $('#mode-toggle').prop('checked', savedMode === 'simple');
     updateUIMode(savedMode === 'simple');
+}
+
+// 获取光标位置
+function getCursorPosition(element) {
+    const rect = element.getBoundingClientRect();
+    const caretPosition = element.selectionStart;
+    const lines = element.value.substr(0, caretPosition).split('\n');
+    const lineHeight = parseInt(window.getComputedStyle(element).lineHeight);
+    
+    // 计算光标的相对位置
+    const currentLineNumber = lines.length - 1;
+    const top = rect.top + window.scrollY + (currentLineNumber * lineHeight);
+    const left = rect.left + window.scrollX;
+    
+    return { top, left };
+}
+
+// 显示快捷短语下拉框
+function showShortcutsDropdown(textarea, caretPos) {
+    console.log('Showing dropdown at position:', caretPos);
+    
+    const dropdown = $('#shortcuts-dropdown');
+    window.currentTextarea = textarea;
+    window.currentSelectionStart = textarea.selectionStart;
+    window.currentSelectionEnd = textarea.selectionEnd;
+
+    // 设置下拉框位置
+    dropdown.css({
+        top: (caretPos.top + 20) + 'px', // 在光标下方20px
+        left: caretPos.left + 'px',
+        display: 'block'
+    });
+
+    $('#dropdown-search').val('').focus();
+    updateShortcutsList('', 'dropdown-list');
 }
 
 // 模式切换功能
@@ -445,7 +402,7 @@ function updateUIMode(isSimpleMode) {
         // 隐藏非必要元素
         $('.settings-panel, #outline, #chapter-temp-container').addClass('hide-in-simple');
         $('.chapter-buttons button')
-            .not(':contains("生成正文"), :contains("切换"), .score-button')
+            .not(':contains("生成正文"), :contains("切换")')
             .addClass('hide-in-simple');
 
         // 显示必要元素
@@ -515,27 +472,13 @@ function deleteShortcut(index) {
     updateShortcutsList();
 }
 
-function showShortcutsDropdown(textarea) {
-    const $textarea = $(textarea);
-    const position = $textarea.offset();
-    const dropdown = $('#shortcuts-dropdown');
-
-    window.currentTextarea = textarea;
-    window.currentSelectionStart = textarea.selectionStart;
-    window.currentSelectionEnd = textarea.selectionEnd;
-
-    dropdown.css({
-        top: position.top + $textarea.outerHeight() + 'px',
-        left: position.left + 'px',
-        display: 'block'
-    });
-
-    $('#dropdown-search').val('').focus();
-    updateShortcutsList('', 'dropdown-list');
-}
-
 function insertShortcut(shortcut) {
     if (!window.currentTextarea) return;
+
+    console.log('Inserting shortcut:', shortcut);
+    console.log('Current textarea:', window.currentTextarea);
+    console.log('Selection start:', window.currentSelectionStart);
+    console.log('Selection end:', window.currentSelectionEnd);
 
     const textarea = window.currentTextarea;
     const start = window.currentSelectionStart;
@@ -551,58 +494,11 @@ function insertShortcut(shortcut) {
     $('#shortcuts-dropdown').hide();
 }
 
-// 快捷键相关功能
-function updateHotkeysList() {
-    const hotkeys = JSON.parse(localStorage.getItem('hotkeys') || JSON.stringify(DEFAULT_HOTKEYS));
-    const list = $('#hotkeys-list');
-    list.empty();
-
-    hotkeys.forEach((hotkey, index) => {
-        list.append(`
-            <div class="list-item">
-                <div class="item-content">
-                    <strong>${hotkey.key}</strong> - ${hotkey.description}
-                </div>
-                <button class="delete-button" onclick="deleteHotkey(${index})">删除</button>
-            </div>
-        `);
-    });
-}
-
-function addHotkey() {
-    const key = $('#new-hotkey-key').val().trim();
-    const description = $('#new-hotkey-desc').val().trim();
-    
-    if (!key || !description) return;
-
-    const hotkeys = JSON.parse(localStorage.getItem('hotkeys') || JSON.stringify(DEFAULT_HOTKEYS));
-    const exists = hotkeys.some(h => h.key === key);
-    
-    if (!exists) {
-        hotkeys.push({ key, description });
-        localStorage.setItem('hotkeys', JSON.stringify(hotkeys));
-        $('#new-hotkey-key').val('');
-        $('#new-hotkey-desc').val('');
-        updateHotkeysList();
-    }
-}
-
-function deleteHotkey(index) {
-    if (!confirm('确定要删除这个快捷键吗？')) return;
-
-    const hotkeys = JSON.parse(localStorage.getItem('hotkeys') || JSON.stringify(DEFAULT_HOTKEYS));
-    hotkeys.splice(index, 1);
-    localStorage.setItem('hotkeys', JSON.stringify(hotkeys));
-    updateHotkeysList();
-}
-
 // 导入导出功能
 function exportSettings() {
     const settings = {
         shortcuts: JSON.parse(localStorage.getItem('shortcuts') || JSON.stringify(DEFAULT_SHORTCUTS)),
-        hotkeys: JSON.parse(localStorage.getItem('hotkeys') || JSON.stringify(DEFAULT_HOTKEYS)),
-        editorMode: localStorage.getItem('editorMode') || 'professional',
-        scorePrompts: JSON.parse(localStorage.getItem('scorePrompts') || JSON.stringify(DEFAULT_SCORE_PROMPTS))
+        editorMode: localStorage.getItem('editorMode') || 'professional'
     };
 
     const exportContent = JSON.stringify(settings, null, 2);
@@ -633,14 +529,8 @@ function importSettings(event) {
             if (settings.shortcuts && Array.isArray(settings.shortcuts)) {
                 localStorage.setItem('shortcuts', JSON.stringify(settings.shortcuts));
             }
-            if (settings.hotkeys && Array.isArray(settings.hotkeys)) {
-                localStorage.setItem('hotkeys', JSON.stringify(settings.hotkeys));
-            }
             if (settings.editorMode) {
                 localStorage.setItem('editorMode', settings.editorMode);
-            }
-            if (settings.scorePrompts) {
-                localStorage.setItem('scorePrompts', JSON.stringify(settings.scorePrompts));
             }
 
             alert('设置导入成功！页面将刷新以应用新设置。');
@@ -660,12 +550,6 @@ function toggleShortcutsModal() {
     updateShortcutsList();
 }
 
-function toggleHotkeysModal() {
-    $('#hotkeys-modal').show();
-    $('#floating-menu').hide();
-    updateHotkeysList();
-}
-
 function toggleImportExportModal() {
     $('#import-export-modal').show();
     $('#floating-menu').hide();
@@ -673,39 +557,6 @@ function toggleImportExportModal() {
 
 function closeModal(modalId) {
     $(`#${modalId}`).hide();
-}
-
-// AI评分功能
-async function getAIScore(content, type) {
-    const savedPrompts = JSON.parse(localStorage.getItem('scorePrompts') || JSON.stringify(DEFAULT_SCORE_PROMPTS));
-    const prompt = savedPrompts[type].replace('{content}', content);
-
-    try {
-        const response = await fetch('/gen', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({prompt})
-        });
-
-        const previewContent = $('#preview-content');
-        const previewModal = $('#preview-modal');
-
-        previewContent.text('正在评分...');
-        previewModal.show();
-
-        const reader = response.body.getReader();
-        const decoder = new TextDecoder();
-        let buffer = '';
-
-        while (true) {
-            const {value, done} = await reader.read();
-            if (done) break;
-            buffer += decoder.decode(value, {stream: true});
-            previewContent.text(buffer);
-        }
-    } catch (error) {
-        alert('评分过程中出错：' + error.message);
-    }
 }
 
 // 页面初始化

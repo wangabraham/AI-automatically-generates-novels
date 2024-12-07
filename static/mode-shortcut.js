@@ -41,7 +41,6 @@ const DEFAULT_SHORTCUTS = [
     "妖兽描写??凶性难驯+实力强横+天赋异禀+潜力无穷"
 ];
 
-
 // 注入CSS样式
 const styles = `
     /* 悬浮球样式 */
@@ -246,6 +245,14 @@ const styles = `
     .list-item:hover {
         background-color: #f5f5f5;
     }
+
+    .hide-in-simple {
+        display: none !important;
+    }
+
+    .show-in-simple {
+        display: block !important;
+    }
 `;
 
 // 注入样式到页面
@@ -353,10 +360,6 @@ function initializeEvents() {
         if (e.shiftKey && e.key.toLowerCase() === 'l' && !shiftLPressed) {
             shiftLPressed = true;
             const activeElement = document.activeElement;
-            console.log('Active element:', activeElement);
-            console.log('Active element tag:', activeElement.tagName);
-            console.log('Active element id:', activeElement.id);
-            console.log('Active element class:', activeElement.className);
             
             if (activeElement.tagName === 'TEXTAREA' || activeElement.tagName === 'INPUT') {
                 e.preventDefault();
@@ -364,12 +367,9 @@ function initializeEvents() {
                     start: activeElement.selectionStart,
                     end: activeElement.selectionEnd
                 };
-                console.log('Selection:', selection);
                 
                 // 获取光标位置
                 const caretPos = getCursorPosition(activeElement);
-                console.log('Caret position:', caretPos);
-                
                 showShortcutsDropdown(activeElement, caretPos);
             }
         }
@@ -394,7 +394,6 @@ function getCursorPosition(element) {
     const lines = element.value.substr(0, caretPosition).split('\n');
     const lineHeight = parseInt(window.getComputedStyle(element).lineHeight);
     
-    // 计算光标的相对位置
     const currentLineNumber = lines.length - 1;
     const top = rect.top + window.scrollY + (currentLineNumber * lineHeight);
     const left = rect.left + window.scrollX;
@@ -404,16 +403,13 @@ function getCursorPosition(element) {
 
 // 显示快捷短语下拉框
 function showShortcutsDropdown(textarea, caretPos) {
-    console.log('Showing dropdown at position:', caretPos);
-    
     const dropdown = $('#shortcuts-dropdown');
     window.currentTextarea = textarea;
     window.currentSelectionStart = textarea.selectionStart;
     window.currentSelectionEnd = textarea.selectionEnd;
 
-    // 设置下拉框位置
     dropdown.css({
-        top: (caretPos.top + 20) + 'px', // 在光标下方20px
+        top: (caretPos.top + 20) + 'px',
         left: caretPos.left + 'px',
         display: 'block'
     });
@@ -427,18 +423,18 @@ function updateUIMode(isSimpleMode) {
     if (isSimpleMode) {
         $('body').addClass('simple-mode');
         $('#mode-text').text('简易模式');
-
+        
         // 检查并创建默认章节
         if ($('.chapter-container').length === 0) {
             addChapterWithContent('新章节细纲', '', false);
         }
-
+        
         // 隐藏非必要元素
         $('.settings-panel, #outline, #chapter-temp-container').addClass('hide-in-simple');
         $('.chapter-buttons button')
-            .not(':contains("生成正文"), :contains("切换")')
+            .not(':contains("生成正文"), :contains("切换"), .score-button')
             .addClass('hide-in-simple');
-
+            
         // 显示必要元素
         $('.chapter-header, .chapter-outline, .chapter-content-text').addClass('show-in-simple');
     } else {
@@ -448,13 +444,13 @@ function updateUIMode(isSimpleMode) {
         $('.settings-panel, #outline, #chapter-temp-container').show();
         $('.chapter-buttons button').show();
     }
-
+    
     localStorage.setItem('editorMode', isSimpleMode ? 'simple' : 'professional');
 }
 
 // 快捷短语相关功能
 function updateShortcutsList(searchTerm = '', targetId = 'shortcuts-list') {
-    const shortcuts = JSON.parse(localStorage.getItem('shortcuts') || JSON.stringify(DEFAULT_SHORTCUTS));
+    const shortcuts = JSON.parse(localStorage.getItem('shortcuts') || '[]');
     const list = $(`#${targetId}`);
     list.empty();
 
@@ -463,7 +459,6 @@ function updateShortcutsList(searchTerm = '', targetId = 'shortcuts-list') {
     );
 
     if (targetId === 'shortcuts-list') {
-        // 管理界面列表
         filteredShortcuts.forEach((shortcut, index) => {
             list.append(`
                 <div class="list-item">
@@ -473,13 +468,11 @@ function updateShortcutsList(searchTerm = '', targetId = 'shortcuts-list') {
             `);
         });
     } else {
-        // 下拉选择列表
         filteredShortcuts.forEach((shortcut) => {
             list.append(`
                 <div class="list-item" onclick="insertShortcut('${shortcut.replace(/'/g, "\\'")}')">
                     <span class="item-content">${shortcut}</span>
-                </div>
-            `);
+                </div>`);
         });
     }
 }
@@ -488,7 +481,7 @@ function addShortcut() {
     const newShortcut = $('#new-shortcut').val().trim();
     if (!newShortcut) return;
 
-    const shortcuts = JSON.parse(localStorage.getItem('shortcuts') || JSON.stringify(DEFAULT_SHORTCUTS));
+    const shortcuts = JSON.parse(localStorage.getItem('shortcuts') || '[]');
     if (!shortcuts.includes(newShortcut)) {
         shortcuts.push(newShortcut);
         localStorage.setItem('shortcuts', JSON.stringify(shortcuts));
@@ -500,7 +493,7 @@ function addShortcut() {
 function deleteShortcut(index) {
     if (!confirm('确定要删除这个词条吗？')) return;
 
-    const shortcuts = JSON.parse(localStorage.getItem('shortcuts') || JSON.stringify(DEFAULT_SHORTCUTS));
+    const shortcuts = JSON.parse(localStorage.getItem('shortcuts') || '[]');
     shortcuts.splice(index, 1);
     localStorage.setItem('shortcuts', JSON.stringify(shortcuts));
     updateShortcutsList();
@@ -508,11 +501,6 @@ function deleteShortcut(index) {
 
 function insertShortcut(shortcut) {
     if (!window.currentTextarea) return;
-
-    console.log('Inserting shortcut:', shortcut);
-    console.log('Current textarea:', window.currentTextarea);
-    console.log('Selection start:', window.currentSelectionStart);
-    console.log('Selection end:', window.currentSelectionEnd);
 
     const textarea = window.currentTextarea;
     const start = window.currentSelectionStart;
@@ -531,7 +519,7 @@ function insertShortcut(shortcut) {
 // 导入导出功能
 function exportSettings() {
     const settings = {
-        shortcuts: JSON.parse(localStorage.getItem('shortcuts') || JSON.stringify(DEFAULT_SHORTCUTS)),
+        shortcuts: JSON.parse(localStorage.getItem('shortcuts') || '[]'),
         editorMode: localStorage.getItem('editorMode') || 'professional'
     };
 

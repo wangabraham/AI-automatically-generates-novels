@@ -234,8 +234,8 @@ addSwitcherStyles() {
     touch-action: none;
     user-select: none;
                 position: fixed !important;
-                right: 20px !important;
-                bottom: 20px !important;
+                right: 20vw !important;
+                bottom: 20vh !important;
                 z-index: 9999;
             }
 
@@ -918,7 +918,7 @@ applyTheme(themeName) {
                 .notification-container {
                     position: fixed !important;
                     top: 20px;
-                    right: 20px !important;
+                    right: 20vw !important;
                     z-index: 10000;
                 }
 

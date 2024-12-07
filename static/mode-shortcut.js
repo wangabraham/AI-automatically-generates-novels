@@ -1,12 +1,46 @@
 // 定义默认配置
 const DEFAULT_SHORTCUTS = [
-    "帮我生成补充",
-    "增强情绪渲染??情绪+比喻/通感/夸张/反问/设问",
-    "填充对话细节??常用人物+动作/神态+语言",
-    "生成旁观者的5条犀利评论",
-    "描写角色的表情细节和肢体动作",
-    "丰富人物描写??人物+外貌/神态/动作+比喻/象征/夸张"
+    // 功法体系
+    "九转玄元功??基础功法+三品+化气归元+温和性功法",
+    "太乙凝真诀??高阶功法+一品+凝练真元+霸道性功法",
+    "万象吞天诀??顶级功法+特殊品阶+吞噬天地元气+极致霸道",
+    
+    // 修真境界
+    "练气境??1-9层+凡人踏入修行第一步+感应天地灵气",
+    "筑基境??初期/中期/后期/大圆满+体内构筑灵力根基",
+    "金丹境??初期/中期/后期/大圆满+凝结金丹+羽化登仙之基",
+    "元婴境??初期/中期/后期/大圆满+元婴出窍+法力无边",
+    "化神境??初期/中期/后期/大圆满+化虚为实+超凡入圣",
+    
+    // 丹药系统
+    "聚气丹??练气期+增进修为+辅助修炼+常见丹药",
+    "固本培元丹??筑基期+稳固根基+增强体质+珍贵丹药",
+    "金元造化丹??金丹期+辅助结丹+增进修为+稀有丹药",
+    
+    // 法器描写
+    "下品法器??一阶法器+增幅灵力+常见材质+适合低阶修士",
+    "中品法器??三阶法器+增幅显著+稀有材质+适合筑基修士",
+    "上品法器??六阶法器+威力强大+珍贵材质+适合金丹真人",
+    
+    // 秘境描述
+    "荒古遗迹??上古修士留存+蕴含机缘+危险与机遇并存",
+    "灵药园??天材地宝+药龄千年+守护兽物+隐秘之地",
+    "洞天福地??灵气充沛+时间流速不同+与世隔绝",
+    
+    // 斗法描写
+    "法术对决??真元对抗+法术相克+虚实变换+胜负难料",
+    "神通较量??神通显化+天地异象+威能盖世+惊天动地",
+    
+    // 修真宗门
+    "太玄门??正道大宗+底蕴深厚+传承久远+门规严谨",
+    "万法宗??旁门大派+百家争鸣+兼收并蓄+包容开放",
+    "魔道宗??左道旁门+手段激进+追求极致+不拘一格",
+    
+    // 灵兽描述
+    "五阶灵兽??化形在即+通灵具智+掌握神通+忠心护主",
+    "妖兽描写??凶性难驯+实力强横+天赋异禀+潜力无穷"
 ];
+
 
 // 注入CSS样式
 const styles = `
@@ -235,7 +269,7 @@ function initializeElements() {
                 </label>
                 <span id="mode-text">专业模式</span>
             </div>
-            <button class="menu-item" onclick="toggleShortcutsModal()">快捷短语管理</button>
+            <button class="menu-item" onclick="toggleShortcutsModal()">快捷词条管理</button>
             <button class="menu-item" onclick="toggleImportExportModal()">导入导出设置</button>
         </div>
 
@@ -245,10 +279,10 @@ function initializeElements() {
                 <h3>快捷短语管理</h3>
                 <button class="close-button" onclick="closeModal('shortcuts-modal')">&times;</button>
             </div>
-            <input type="text" class="search-input" id="shortcuts-search" placeholder="搜索快捷短语...">
+            <input type="text" class="search-input" id="shortcuts-search" placeholder="搜索词条卡...">
             <div id="shortcuts-list"></div>
             <div class="add-item-group">
-                <input type="text" class="add-item-input" id="new-shortcut" placeholder="输入新的快捷短语">
+                <input type="text" class="add-item-input" id="new-shortcut" placeholder="输入新的词条">
                 <button class="add-button" onclick="addShortcut()">添加</button>
             </div>
         </div>
@@ -270,10 +304,10 @@ function initializeElements() {
         <!-- 快捷短语下拉框 -->
         <div id="shortcuts-dropdown">
             <div class="modal-header">
-                <h3>快捷短语</h3>
+                <h3>快捷词条</h3>
                 <button class="close-button" onclick="$('#shortcuts-dropdown').hide()">&times;</button>
             </div>
-            <input type="text" class="search-input" id="dropdown-search" placeholder="搜索快捷短语...">
+            <input type="text" class="search-input" id="dropdown-search" placeholder="搜索词条...">
             <div id="dropdown-list"></div>
         </div>
     `);
@@ -464,7 +498,7 @@ function addShortcut() {
 }
 
 function deleteShortcut(index) {
-    if (!confirm('确定要删除这个快捷短语吗？')) return;
+    if (!confirm('确定要删除这个词条吗？')) return;
 
     const shortcuts = JSON.parse(localStorage.getItem('shortcuts') || JSON.stringify(DEFAULT_SHORTCUTS));
     shortcuts.splice(index, 1);

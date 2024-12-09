@@ -2,28 +2,52 @@
 
 class BookSplitter {
     constructor() {
+        // 配置常量
+        this.CONFIG = {
+            MAX_FILE_SIZE: 50 * 1024 * 1024,
+            STORAGE_KEY: 'bookSplitter_v1_data',
+            SUPPORTED_ENCODINGS: ['UTF-8', 'GBK', 'GB2312', 'BIG5'],
+            MAX_RETRIES: 3,
+            RETRY_DELAY: 1000,
+            Z_INDEX: {
+                MODAL: 999998,
+                BALL: 999999,
+                STATUS: 1000000
+            }
+        };
+
+        // 状态管理
+        this.state = {
+            totalChapters: 0,
+            processedChapters: 0,
+            currentOperation: null,
+            isProcessing: false
+        };
+
+        this.chapters = [];
+        
+        // 增强的章节匹配模式
+        this.splitPattern = new RegExp(
+            '(?:^|\\n)(?:' + 
+            '.*第[0-9一二三四五六七八九十百千万零]+[章节]\\s*[:：]?.*|' + 
+            '章节[0-9]+.*|' + 
+            '###第[0-9一二三四五六七八九十百千万零]+章.*###|' + 
+            '.*第[0-9一二三四五六七八九十百千万零]+章.*|' + 
+            '章节[一二三四五六七八九十百千万零]+.*' + 
+            ')',
+            'gm'
+        );
+
+        // 初始化组件
         this.createFloatingBall();
         this.createModal();
         this.bindEvents();
         this.initializeFromStorage();
-        // Enhanced chapter pattern matching
-        this.splitPattern = new RegExp(
-            '(?:^|\\n)(?:' + 
-            '第[0-9一二三四五六七八九十百千万零]+[章节回]\\s*[:：]?.*|' + // 第X章/节/回
-            '章节[0-9]+.*|' + // 章节X
-            '###第[0-9一二三四五六七八九十百千万零]+章.*###|' + // ###第X章###
-            '.*第[0-9一二三四五六七八九十百千万零]+章.*|' + // 任意字符第X章
-            '章节[一二三四五六七八九十百千万零]+.*' + // 章节一/二/三
-            ')',
-            'gm'
-        );
-        this.chapters = [];
-        this.maxRetries = 3;
     }
 
     createFloatingBall() {
         const ball = document.createElement('div');
-        ball.id = 'floating-ball';
+        ball.id = 'book-splitter-ball';
         ball.innerHTML = '拆书';
         ball.style.cssText = `
             position: fixed;
@@ -40,7 +64,7 @@ class BookSplitter {
             justify-content: center;
             cursor: pointer;
             box-shadow: 0 2px 10px rgba(0,0,0,0.2);
-            z-index: 9999;
+            z-index: ${this.CONFIG.Z_INDEX.BALL};
             user-select: none;
             transition: background-color 0.3s;
         `;
@@ -53,36 +77,47 @@ class BookSplitter {
         modal.id = 'book-splitter-modal';
         modal.innerHTML = `
             <div class="splitter-content">
-                <h2>拆书工具</h2>
+                <h2>拆书工具 <span class="version">v1.0</span></h2>
+                <div class="progress-container" style="display: none;">
+                    <div class="progress-bar">
+                        <div class="progress-inner"></div>
+                    </div>
+                    <div class="progress-text">处理进度: 0%</div>
+                    <div class="progress-status">待处理章节: 0 | 已处理: 0 | 总计: 0</div>
+                </div>
                 <div class="splitter-buttons">
-                    <input type="file" id="book-file" accept=".txt" style="display: none">
-                    <button id="import-book">导入文本</button>
-                    <button id="start-split">开始分割</button>
-                    <button id="split-all">全部拆书</button>
-                    <button id="export-data">导出数据</button>
-                    <button id="clear-data">清除数据</button>
+                    <input type="file" id="book-splitter-file" accept=".txt" style="display: none">
+                    <select id="book-splitter-encoding" class="encoding-select">
+                        ${this.CONFIG.SUPPORTED_ENCODINGS.map(enc => 
+                            `<option value="${enc}"${enc === 'UTF-8' ? ' selected' : ''}>${enc}</option>`
+                        ).join('')}
+                    </select>
+                    <button id="book-splitter-import" class="primary-button">导入文本</button>
+                    <button id="book-splitter-split" class="primary-button" disabled>开始分割</button>
+                    <button id="book-splitter-analyze-all" class="primary-button" disabled>全部拆书</button>
+                    <button id="book-splitter-export" class="primary-button" disabled>导出数据</button>
+                    <button id="book-splitter-clear" class="warning-button">清除数据</button>
                 </div>
                 <div class="prompt-section">
                     <h3>拆书提示词</h3>
-                    <textarea id="split-prompt" rows="4" placeholder="输入拆书提示词...">请分析这一章节的内容，提供以下信息：
-1. 章节主要情节概述
-2. 重要人物及其行为
-3. 关键场景描写
-4. 情节发展和转折点
-5. 与整体故事的关联</textarea>
-                </div>
-                <div class="loading-indicator" style="display: none;">
-                    <div class="spinner"></div>
-                    <span class="loading-text">处理中...</span>
-                </div>
-                <div id="chapters-container">
-                    <div class="chapters-scroll">
+                    <div class="prompt-controls">
+                        <button id="book-splitter-reset-prompt" class="secondary-button">重置默认提示词</button>
+                        <button id="book-splitter-save-prompt" class="secondary-button">保存提示词</button>
                     </div>
+                    <textarea id="book-splitter-prompt" rows="6" placeholder="输入拆书提示词...">${this.getDefaultPrompt()}</textarea>
                 </div>
-                <div id="status-message" class="status-message"></div>
+                <div id="book-splitter-chapters" class="chapters-containerxxx">
+                    <div class="chapters-scroll"></div>
+                </div>
+                <div id="book-splitter-status" class="status-message"></div>
             </div>
         `;
 
+        this.addStyles();
+        document.body.appendChild(modal);
+    }
+
+    addStyles() {
         const style = document.createElement('style');
         style.textContent = `
             #book-splitter-modal {
@@ -95,23 +130,77 @@ class BookSplitter {
                 padding: 20px;
                 border-radius: 8px;
                 box-shadow: 0 0 20px rgba(0,0,0,0.2);
-                z-index: 9998;
-                width: 800px;
-                height: 600px;
+                z-index: ${this.CONFIG.Z_INDEX.MODAL};
+                width: 80%;
+                max-width: 1400px;
+                height: 80vh;
                 overflow: hidden;
+                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
             }
+
             .splitter-content {
                 height: 100%;
                 display: flex;
                 flex-direction: column;
+                gap: 15px;
             }
+
+            .version {
+                font-size: 12px;
+                color: #666;
+                margin-left: 10px;
+            }
+
+            .progress-container {
+                background: #f8f9fa;
+                padding: 15px;
+                border-radius: 8px;
+                margin-bottom: 10px;
+            }
+
+            .progress-bar {
+                width: 100%;
+                height: 20px;
+                background: #e9ecef;
+                border-radius: 10px;
+                overflow: hidden;
+            }
+
+            .progress-inner {
+                width: 0%;
+                height: 100%;
+                background: #1a73e8;
+                transition: width 0.3s ease;
+            }
+
+            .progress-text {
+                text-align: center;
+                margin-top: 5px;
+                font-size: 14px;
+                color: #495057;
+            }
+
+            .progress-status {
+                text-align: center;
+                margin-top: 5px;
+                font-size: 12px;
+                color: #6c757d;
+            }
+
             .splitter-buttons {
-                margin: 20px 0;
                 display: flex;
                 gap: 10px;
                 flex-wrap: wrap;
             }
-            .splitter-buttons button {
+
+            .encoding-select {
+                padding: 8px 12px;
+                border: 1px solid #ced4da;
+                border-radius: 4px;
+                font-size: 14px;
+            }
+
+            .primary-button {
                 padding: 8px 16px;
                 border: none;
                 border-radius: 4px;
@@ -120,325 +209,574 @@ class BookSplitter {
                 cursor: pointer;
                 transition: background 0.3s;
             }
-            .splitter-buttons button:hover {
+
+            .primary-button:hover {
                 background: #1557b0;
             }
-            #chapters-container {
+
+            .primary-button:disabled {
+                background: #ccc;
+                cursor: not-allowed;
+            }
+
+            .warning-button {
+                background: #dc3545;
+                color: white;
+            }
+
+            .warning-button:hover {
+                background: #c82333;
+            }
+
+            .secondary-button {
+                padding: 6px 12px;
+                border: 1px solid #1a73e8;
+                border-radius: 4px;
+                background: white;
+                color: #1a73e8;
+                cursor: pointer;
+                transition: all 0.3s;
+            }
+
+            .secondary-button:hover {
+                background: #f8f9fa;
+            }
+
+            .prompt-section {
+                background: #f8f9fa;
+                padding: 15px;
+                border-radius: 8px;
+            }
+
+            .prompt-controls {
+                display: flex;
+                gap: 10px;
+                margin-bottom: 10px;
+            }
+
+            #book-splitter-prompt {
+                width: 100%;
+                padding: 10px;
+                border: 1px solid #ced4da;
+                border-radius: 4px;
+                resize: vertical;
+                font-size: 14px;
+                line-height: 1.5;
+                min-height: 100px;
+            }
+
+            .chapters-containerxxx {
                 flex: 1;
                 overflow: hidden;
-                position: relative;
+                background: white;
+                border: 1px solid #ced4da;
+                border-radius: 4px;
             }
+
             .chapters-scroll {
                 height: 100%;
                 overflow-y: auto;
-                padding-right: 10px;
-            }
-            .chapter-container {
-                margin: 10px 0;
-                border: 1px solid #ddd;
-                border-radius: 4px;
-                transition: all 0.3s;
-            }
-            .chapter-header {
                 padding: 10px;
-                background: #f5f5f5;
+            }
+
+            .chapter-item {
+                margin-bottom: 10px;
+                border: 1px solid #dee2e6;
+                border-radius: 4px;
+                overflow: hidden;
+            }
+
+            .chapter-header {
+                padding: 10px 15px;
+                background: #f8f9fa;
                 cursor: pointer;
                 display: flex;
                 justify-content: space-between;
                 align-items: center;
             }
-            .chapter-content {
-                padding: 10px;
-                display: none;
-                transition: all 0.3s;
+
+            .chapter-header:hover {
+                background: #e9ecef;
             }
+
+            .chapter-title {
+                font-weight: 500;
+                color: #212529;
+            }
+
+            .chapter-content {
+                display: none;
+                padding: 15px;
+                background: white;
+            }
+
             .chapter-content.show {
                 display: block;
             }
-            #split-prompt {
-                width: 100%;
-                margin: 10px 0;
-                padding: 10px;
-                border: 1px solid #ddd;
-                border-radius: 4px;
-                resize: vertical;
-            }
-            .chapter-textarea {
+
+            .chapter-text {
                 width: 100%;
                 min-height: 100px;
-                margin: 10px 0;
                 padding: 10px;
-                border: 1px solid #ddd;
+                border: 1px solid #ced4da;
                 border-radius: 4px;
+                margin-bottom: 10px;
                 resize: vertical;
+                font-size: 14px;
+                line-height: 1.5;
             }
-            .analysis-content {
+
+            .chapter-analysis {
                 width: 100%;
                 min-height: 100px;
-                margin: 10px 0;
                 padding: 10px;
-                border: 1px solid #ddd;
+                border: 1px solid #ced4da;
                 border-radius: 4px;
-                background: #f9f9f9;
+                background: #f8f9fa;
+                margin-top: 10px;
+                font-size: 14px;
+                line-height: 1.5;
+                white-space: pre-wrap;
             }
-            .loading-indicator {
-                text-align: center;
+
+            .chapter-buttons {
+                display: flex;
+                gap: 10px;
                 margin: 10px 0;
             }
-            .spinner {
-                width: 30px;
-                height: 30px;
-                border: 3px solid #f3f3f3;
-                border-top: 3px solid #1a73e8;
-                border-radius: 50%;
-                animation: spin 1s linear infinite;
-                margin: 0 auto;
-            }
+
             .status-message {
                 position: fixed;
                 bottom: 20px;
                 right: 20px;
                 padding: 10px 20px;
                 border-radius: 4px;
-                background: rgba(0,0,0,0.8);
                 color: white;
                 display: none;
-                z-index: 10000;
+                z-index: ${this.CONFIG.Z_INDEX.STATUS};
+                animation: fadeIn 0.3s ease;
             }
+
+            .status-message.success {
+                background: #28a745;
+            }
+
+            .status-message.error {
+                background: #dc3545;
+            }
+
+            .status-message.info {
+                background: #17a2b8;
+            }
+
+            @keyframes fadeIn {
+                from { opacity: 0; transform: translateY(20px); }
+                to { opacity: 1; transform: translateY(0); }
+            }
+
             @keyframes spin {
                 0% { transform: rotate(0deg); }
                 100% { transform: rotate(360deg); }
             }
-            .retry-button {
-                background: #dc3545 !important;
-                margin-left: 10px;
-            }
-            .success {
-                background: #28a745 !important;
-            }
-            .error {
-                background: #dc3545 !important;
-            }
         `;
         document.head.appendChild(style);
-        document.body.appendChild(modal);
     }
 
-    showStatus(message, type = 'info') {
-        const status = document.getElementById('status-message');
-        status.textContent = message;
-        status.className = `status-message ${type}`;
-        status.style.display = 'block';
-        setTimeout(() => {
-            status.style.display = 'none';
-        }, 3000);
+    getDefaultPrompt() {
+        return `请仔细分析本章节内容，并提供以下分析结果：
+
+1. 章节概要：
+   - 主要情节梳理
+   - 时间地点背景
+
+2. 人物分析：
+   - 主要人物及其行为
+   - 人物关系变化
+   - 性格特征展现
+
+3. 情节解析：
+   - 关键场景描写
+   - 重要对话内容
+   - 情节转折点
+
+4. 主题探讨：
+   - 章节主旨
+   - 与整体故事的关联
+   - 伏笔或呼应
+
+5. 写作技巧：
+   - 特色描写手法
+   - 叙事视角运用
+   - 语言风格特点
+
+请确保分析全面且准确，并突出重点内容。`;
     }
 
-    initializeFromStorage() {
-        try {
-            const savedData = localStorage.getItem('bookSplitterData');
-            if (savedData) {
-                const data = JSON.parse(savedData);
-                this.chapters = data.chapters || [];
-                document.getElementById('split-prompt').value = data.prompt || '';
-                this.renderSavedChapters();
-            }
-        } catch (error) {
-            console.error('Error loading saved data:', error);
-        }
-    }
-
-    saveToStorage() {
-        try {
-            const data = {
-                chapters: this.chapters,
-                prompt: document.getElementById('split-prompt').value
-            };
-            localStorage.setItem('bookSplitterData', JSON.stringify(data));
-            this.showStatus('数据已保存', 'success');
-        } catch (error) {
-            this.showStatus('保存数据失败', 'error');
-        }
-    }
-
-    async readFile(file) {
+    async readFileWithEncoding(file, encoding) {
         return new Promise((resolve, reject) => {
             const reader = new FileReader();
-            reader.onload = (e) => resolve(e.target.result);
-            reader.onerror = reject;
-            reader.readAsText(file);
+            
+            reader.onload = async (e) => {
+                try {
+                    let content = e.target.result;
+                    
+                    if (encoding !== 'UTF-8') {
+                        // 尝试转换编码
+                        const decoder = new TextDecoder(encoding);
+                        const encoder = new TextEncoder();
+                        content = decoder.decode(encoder.encode(content));
+                    }
+                    
+                    // 检查是否有乱码
+                    if (content.includes('�')) {
+                        throw new Error('文件编码可能不正确，请尝试其他编码');
+                    }
+                    
+                    resolve(content);
+                } catch (error) {
+                    reject(new Error(`无法以 ${encoding} 编码读取文件: ${error.message}`));
+                }
+            };
+            
+            reader.onerror = () => reject(new Error('文件读取失败'));
+            reader.readAsText(file, encoding);
         });
     }
 
-    async splitBook(content) {
-        const chaptersContainer = document.querySelector('.chapters-scroll');
-        chaptersContainer.innerHTML = '';
-        this.chapters = [];
+    async tryReadFileWithEncodings(file) {
+        const selectedEncoding = document.getElementById('book-splitter-encoding').value;
+        let lastError = null;
+        
+        // 首先尝试用选定的编码
+        try {
+            return await this.readFileWithEncoding(file, selectedEncoding);
+        } catch (error) {
+            lastError = error;
+            this.showStatus(`使用 ${selectedEncoding} 编码读取失败，尝试其他编码...`, 'info');
 
-        // 使用正则表达式找到所有章节标题
-        const matches = content.match(this.splitPattern);
-        if (!matches) {
-            this.showStatus('未找到任何章节', 'error');
+
+
+// 尝试其他编码
+        for (const encoding of this.CONFIG.SUPPORTED_ENCODINGS) {
+            if (encoding === selectedEncoding) continue;
+            try {
+                const content = await this.readFileWithEncoding(file, encoding);
+                this.showStatus(`成功使用 ${encoding} 编码读取文件`, 'success');
+                return content;
+            } catch (error) {
+                lastError = error;
+                continue;
+            }
+        }
+        
+        throw lastError || new Error('所有编码尝试均失败');
+    }
+    }
+    async splitBook(content) {
+        try {
+            const chaptersContainer = document.querySelector('.chapters-scroll');
+            if (!chaptersContainer) throw new Error('找不到章节容器元素');
+
+            chaptersContainer.innerHTML = '';
+            this.chapters = [];
+
+            // 使用正则表达式找到所有章节标题
+            const matches = content.match(this.splitPattern);
+            if (!matches) {
+                this.showStatus('未找到任何章节', 'error');
+                return;
+            }
+
+            this.state.totalChapters = matches.length;
+            this.state.processedChapters = 0;
+            this.updateProgress();
+
+            // 获取每章节的内容
+            for (let i = 0; i < matches.length; i++) {
+                const title = matches[i].trim();
+                const nextTitle = matches[i + 1];
+                let chapterContent = '';
+
+                if (nextTitle) {
+                    const startIndex = content.indexOf(title) + title.length;
+                    const endIndex = content.indexOf(nextTitle);
+                    chapterContent = content.substring(startIndex, endIndex).trim();
+                } else {
+                    const startIndex = content.indexOf(title) + title.length;
+                    chapterContent = content.substring(startIndex).trim();
+                }
+
+                this.chapters.push({
+                    id: `chapter-${i}`,
+                    title,
+                    content: chapterContent,
+                    analysis: '',
+                    status: 'pending'
+                });
+
+                await this.createChapterElement(title, chapterContent, i);
+                this.state.processedChapters++;
+                this.updateProgress();
+            }
+
+            this.saveToStorage();
+            this.enableButtons();
+            this.showStatus(`成功分割出 ${this.chapters.length} 章`, 'success');
+        } catch (error) {
+            console.error('分割文本失败:', error);
+            this.showStatus(`分割文本失败: ${error.message}`, 'error');
+        }
+    }
+
+    createChapterElement(title, content, index) {
+        return new Promise((resolve) => {
+            const container = document.createElement('div');
+            container.className = 'chapter-item';
+            container.id = this.chapters[index].id;
+            container.innerHTML = `
+                <div class="chapter-header">
+                    <span class="chapter-title">${title}</span>
+                    <span class="chapter-status">${this.getStatusIcon('pending')}</span>
+                </div>
+                <div class="chapter-content">
+                    <textarea class="chapter-text" readonly>${content}</textarea>
+                    <div class="chapter-buttons">
+                        <button class="primary-button analyze-button">拆解本章</button>
+                        <button class="warning-button retry-button" style="display: none;">重试</button>
+                    </div>
+                    <div class="chapter-analysis" style="display: none;"></div>
+                </div>
+            `;
+
+            const chaptersContainer = document.querySelector('.chapters-scroll');
+            chaptersContainer.appendChild(container);
+
+            const header = container.querySelector('.chapter-header');
+            const chapterContent = container.querySelector('.chapter-content');
+            const analyzeBtn = container.querySelector('.analyze-button');
+            const retryBtn = container.querySelector('.retry-button');
+
+            header.addEventListener('click', () => {
+                chapterContent.classList.toggle('show');
+            });
+
+            analyzeBtn.addEventListener('click', () => this.analyzeChapter(container, index));
+            retryBtn.addEventListener('click', () => this.analyzeChapter(container, index, true));
+
+            // 添加一点延迟以实现平滑的动画效果
+            setTimeout(resolve, 50);
+        });
+    }
+
+    getStatusIcon(status) {
+        const icons = {
+            pending: '⚪',
+            processing: '������',
+            success: '✅',
+            error: '❌'
+        };
+        return icons[status] || icons.pending;
+    }
+
+    updateChapterStatus(container, status) {
+        const statusSpan = container.querySelector('.chapter-status');
+        if (statusSpan) {
+            statusSpan.textContent = this.getStatusIcon(status);
+        }
+    }
+
+async analyzeChapter(container, index, isRetry = false) {
+    const chapterId = this.chapters[index].id;
+    const analysisContent = container.querySelector('.chapter-analysis');
+    const analyzeBtn = container.querySelector('.analyze-button');
+    const retryBtn = container.querySelector('.retry-button');
+
+    if (!analysisContent || !analyzeBtn || !retryBtn) {
+        this.showStatus('DOM元素未找到，请刷新页面重试', 'error');
+        return;
+    }
+
+    // Update UI state
+    analyzeBtn.disabled = true;
+    retryBtn.style.display = 'none';
+    analysisContent.style.display = 'block';
+    analysisContent.textContent = '正在分析...';
+    this.updateChapterStatus(container, 'processing');
+
+    // Get chapter data and prompt
+    const chapter = this.chapters[index];
+    const basePrompt = document.getElementById('book-splitter-prompt')?.value || this.getDefaultPrompt();
+
+    try {
+        // Construct the analysis prompt
+        const prompt = `${basePrompt}\n\n章节标题：${chapter.title}\n\n章节内容：${chapter.content}`;
+
+        // Make the API request with simplified body
+        const response = await this.makeRequest('/gen', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ prompt })
+        });
+
+        // Handle streaming response
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let analysisText = '';
+
+        while (true) {
+            const {value, done} = await reader.read();
+            if (done) break;
+            const chunk = decoder.decode(value, {stream: true});
+            analysisText += chunk;
+            analysisContent.textContent = analysisText;
+        }
+
+        // Update chapter data and UI
+        this.chapters[index].analysis = analysisText;
+        this.chapters[index].status = 'success';
+        this.updateChapterStatus(container, 'success');
+        this.saveToStorage();
+        this.updateProgress();
+        analyzeBtn.disabled = false;
+
+    } catch (error) {
+        console.error('Analysis failed:', error);
+        this.chapters[index].status = 'error';
+        this.updateChapterStatus(container, 'error');
+        analysisContent.textContent = '分析失败';
+        analyzeBtn.disabled = false;
+        retryBtn.style.display = 'inline-block';
+        this.showStatus('分析失败，请重试', 'error');
+    }
+}
+
+
+    async analyzeAllChapters() {
+        const unanalyzedChapters = this.chapters.filter(c => c.status !== 'success');
+        if (unanalyzedChapters.length === 0) {
+            this.showStatus('所有章节已分析完成', 'success');
             return;
         }
 
-        // 获取每章节的内容
-        for (let i = 0; i < matches.length; i++) {
-            const title = matches[i].trim();
-            const nextTitle = matches[i + 1];
-            let chapterContent = '';
+        const analyzeAllBtn = document.getElementById('book-splitter-analyze-all');
+        analyzeAllBtn.disabled = true;
 
-            if (nextTitle) {
-                const startIndex = content.indexOf(title) + title.length;
-                const endIndex = content.indexOf(nextTitle);
-                chapterContent = content.substring(startIndex, endIndex).trim();
-            } else {
-                const startIndex = content.indexOf(title) + title.length;
-                chapterContent = content.substring(startIndex).trim();
-            }
+        for (let i = 0; i < this.chapters.length; i++) {
+            if (this.chapters[i].status === 'success') continue;
+            
+            const container = document.getElementById(this.chapters[i].id);
+            if (!container) continue;
 
-            this.chapters.push({
-                title,
-                content: chapterContent,
-                analysis: ''
-            });
-
-            await this.createChapterElement(title, chapterContent, this.chapters.length - 1);
-            this.showStatus(`已处理 ${this.chapters.length} 章`, 'success');
-        }
-
-        this.saveToStorage();
-    }
-
-    async createChapterElement(title, content, index) {
-        const container = document.createElement('div');
-        container.className = 'chapter-container';
-        container.innerHTML = `
-            <div class="chapter-header">
-                <span>${title}</span>
-                <span class="toggle-icon">▼</span>
-            </div>
-            <div class="chapter-content">
-                <textarea class="chapter-textarea" readonly>${content}</textarea>
-                <button class="analyze-chapter">拆解本章</button>
-                <button class="retry-chapter retry-button" style="display: none;">重试</button>
-                <div class="analysis-content" style="display: none;"></div>
-            </div>
-        `;
-
-        document.querySelector('.chapters-scroll').appendChild(container);
-
-        const header = container.querySelector('.chapter-header');
-        const content_div = container.querySelector('.chapter-content');
-        const analyzeBtn = container.querySelector('.analyze-chapter');
-        const retryBtn = container.querySelector('.retry-chapter');
-
-        header.addEventListener('click', () => {
-            content_div.classList.toggle('show');
-            header.querySelector('.toggle-icon').textContent = 
-                content_div.classList.contains('show') ? '▼' : '▶';
-        });
-
-        analyzeBtn.addEventListener('click', () => this.analyzeChapter(container, index));
-        retryBtn.addEventListener('click', () => this.analyzeChapter(container, index, true));
-
-        return new Promise(resolve => setTimeout(resolve, 100)); // 添加延迟以实现动画效果
-    }
-
-    async analyzeChapter(container, index, isRetry = false, retryCount = 0) {
-        const prompt = document.getElementById('split-prompt').value;
-        const content = this.chapters[index].content;
-        const title = this.chapters[index].title;
-        const analysisContent = container.querySelector('.analysis-content');
-        const analyzeBtn = container.querySelector('.analyze-chapter');
-        const retryBtn = container.querySelector('.retry-chapter');
-
-        analyzeBtn.disabled = true;
-        analysisContent.style.display = 'block';
-        analysisContent.textContent = '正在分析...';
-
-        try {
-            const response = await fetch('/gen', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    prompt: `${prompt}\n\n章节标题：${title}\n\n章节内容：${content}`
-                })
-            });
-
-            if (!response.ok) throw new Error('分析请求失败');
-
-            const reader = response.body.getReader();
-            const decoder = new TextDecoder();
-            let analysisText = '';
-
-            while (true) {
-                const {value, done} = await reader.read();
-                if (done) break;
-                
-                analysisText += decoder.decode(value, {stream: true});
-                analysisContent.textContent = analysisText;
-            }
-
-            this.chapters[index].analysis = analysisText;
-            this.saveToStorage();
-            analyzeBtn.disabled = false;
-            retryBtn.style.display = 'none';
-            this.showStatus('分析完成', 'success');
-
-        } catch (error) {
-            console.error('Analysis failed:', error);
-            if (retryCount < this.maxRetries) {
-                analysisContent.textContent = `分析失败，已重试 ${retryCount + 1}/${this.maxRetries} 次...`;
-                await new Promise(resolve => setTimeout(resolve, 1000));
-                return this.analyzeChapter(container, index, true, retryCount + 1);
-            } else {
-                analysisContent.textContent = '分析失败';
-                analyzeBtn.disabled = false;
-                retryBtn.style.display = 'inline-block';
-                this.showStatus('分析失败，请重试', 'error');
-            }
-        }
-    }
-
-    async analyzeAllChapters() {
-        const chaptersCount = this.chapters.length;
-        for (let i = 0; i < chaptersCount; i++) {
-            const container = document.querySelectorAll('.chapter-container')[i];
-            this.showStatus(`正在分析第 ${i + 1}/${chaptersCount} 章`, 'info');
+            this.showStatus(`正在分析第 ${i + 1}/${this.chapters.length} 章`, 'info');
             await this.analyzeChapter(container, i);
+            await new Promise(resolve => setTimeout(resolve, 1000)); // 添加延迟避免请求过快
         }
+
+        analyzeAllBtn.disabled = false;
         this.showStatus('全部分析完成', 'success');
     }
 
-    exportData() {
-        const data = {
-		prompt: document.getElementById('split-prompt').value,
-            chapters: this.chapters
-        };
+    async makeRequest(url, options, retries = 3) {
+        try {
+            const response = await fetch(url, options);
+            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+            return response;
+        } catch (error) {
+            if (retries > 0) {
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                return this.makeRequest(url, options, retries - 1);
+            }
+            throw error;
+        }
+    }
 
-        const blob = new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'});
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = 'book-analysis.json';
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-        this.showStatus('数据导出成功', 'success');
+    updateProgress() {
+        const progressContainer = document.querySelector('.progress-container');
+        const progressInner = document.querySelector('.progress-inner');
+        const progressText = document.querySelector('.progress-text');
+        const progressStatus = document.querySelector('.progress-status');
+        
+        if (!progressContainer || !progressInner || !progressText || !progressStatus) return;
+
+        const analyzedCount = this.chapters.filter(c => c.status === 'success').length;
+        const totalChapters = this.chapters.length;
+        const progress = totalChapters ? (analyzedCount / totalChapters) * 100 : 0;
+
+        progressContainer.style.display = 'block';
+        progressInner.style.width = `${progress}%`;
+        progressText.textContent = `处理进度: ${Math.round(progress)}%`;
+        progressStatus.textContent = `待处理章节: ${totalChapters - analyzedCount} | 已处理: ${analyzedCount} | 总计: ${totalChapters}`;
+    }
+
+    exportData() {
+        try {
+            const data = {
+                version: '1.0',
+                timestamp: new Date().toISOString(),
+                prompt: document.getElementById('book-splitter-prompt')?.value,
+                chapters: this.chapters
+            };
+
+            const blob = new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'});
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `book-analysis-${new Date().toISOString().slice(0,10)}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            
+            this.showStatus('数据导出成功', 'success');
+        } catch (error) {
+            console.error('Export failed:', error);
+            this.showStatus('导出失败', 'error');
+        }
     }
 
     clearData() {
         if (confirm('确定要清除所有数据吗？此操作不可恢复。')) {
-            localStorage.removeItem('bookSplitterData');
-            this.chapters = [];
-            document.querySelector('.chapters-scroll').innerHTML = '';
-            document.getElementById('split-prompt').value = '';
-            this.showStatus('数据已清除', 'success');
+            try {
+                localStorage.removeItem(this.CONFIG.STORAGE_KEY);
+                this.chapters = [];
+                document.querySelector('.chapters-scroll').innerHTML = '';
+                document.getElementById('book-splitter-prompt').value = this.getDefaultPrompt();
+                this.state.totalChapters = 0;
+                this.state.processedChapters = 0;
+                this.updateProgress();
+                this.disableButtons();
+                this.showStatus('数据已清除', 'success');
+            } catch (error) {
+                console.error('Clear data failed:', error);
+                this.showStatus('清除数据失败', 'error');
+            }
         }
+    }
+
+    enableButtons() {
+        document.getElementById('book-splitter-split').disabled = false;
+        document.getElementById('book-splitter-analyze-all').disabled = false;
+        document.getElementById('book-splitter-export').disabled = false;
+    }
+
+    disableButtons() {
+        document.getElementById('book-splitter-split').disabled = true;
+        document.getElementById('book-splitter-analyze-all').disabled = true;
+        document.getElementById('book-splitter-export').disabled = true;
+    }
+
+    showStatus(message, type = 'info') {
+        const status = document.getElementById('book-splitter-status');
+        if (!status) return;
+
+        status.textContent = message;
+        status.className = `status-message ${type}`;
+        status.style.display = 'block';
+
+        // 3秒后自动消失
+        setTimeout(() => {
+            status.style.display = 'none';
+        }, 3000);
     }
 
     makeDraggable(element) {
@@ -480,57 +818,108 @@ class BookSplitter {
             isDragging = false;
         });
 
-        // 防止文本选择
         element.addEventListener('dragstart', (e) => e.preventDefault());
+    }
+
+    initializeFromStorage() {
+        try {
+            const savedData = localStorage.getItem(this.CONFIG.STORAGE_KEY);
+            if (savedData) {
+                const data = JSON.parse(savedData);
+                this.chapters = data.chapters || [];
+                if (data.prompt) {
+                    const promptElement = document.getElementById('book-splitter-prompt');
+                    if (promptElement) promptElement.value = data.prompt;
+                }
+                this.renderSavedChapters();
+            }
+        } catch (error) {
+            console.error('Error loading saved data:', error);
+            this.showStatus('加载保存的数据失败', 'error');
+        }
     }
 
     async renderSavedChapters() {
         const chaptersContainer = document.querySelector('.chapters-scroll');
+        if (!chaptersContainer) return;
+
         chaptersContainer.innerHTML = '';
         for (let i = 0; i < this.chapters.length; i++) {
             const chapter = this.chapters[i];
             await this.createChapterElement(chapter.title, chapter.content, i);
-            const container = document.querySelectorAll('.chapter-container')[i];
-            const analysisContent = container.querySelector('.analysis-content');
-            if (chapter.analysis) {
-                analysisContent.style.display = 'block';
-                analysisContent.textContent = chapter.analysis;
+            
+            const container = document.getElementById(chapter.id);
+            if (container && chapter.analysis) {
+                const analysisContent = container.querySelector('.chapter-analysis');
+                if (analysisContent) {
+                    analysisContent.style.display = 'block';
+                    analysisContent.textContent = chapter.analysis;
+                }
+this.updateChapterStatus(container, chapter.status || 'pending');
             }
+        }
+        
+        if (this.chapters.length > 0) {
+            this.enableButtons();
+            this.updateProgress();
+        }
+    }
+
+    saveToStorage() {
+        try {
+            const data = {
+                version: '1.0',
+                timestamp: new Date().toISOString(),
+                prompt: document.getElementById('book-splitter-prompt')?.value,
+                chapters: this.chapters
+            };
+            localStorage.setItem(this.CONFIG.STORAGE_KEY, JSON.stringify(data));
+            return true;
+        } catch (error) {
+            console.error('Error saving data:', error);
+            this.showStatus('保存数据失败', 'error');
+            return false;
         }
     }
 
     bindEvents() {
-        const ball = document.getElementById('floating-ball');
+        // 悬浮球和模态框交互
+        const ball = document.getElementById('book-splitter-ball');
         const modal = document.getElementById('book-splitter-modal');
 
-        ball.addEventListener('click', () => {
-            modal.style.display = modal.style.display === 'none' ? 'block' : 'none';
+        ball?.addEventListener('click', () => {
+            if (modal) {
+                modal.style.display = modal.style.display === 'none' ? 'block' : 'none';
+            }
         });
 
-        document.getElementById('import-book').addEventListener('click', () => {
-            document.getElementById('book-file').click();
+        // 文件导入
+        document.getElementById('book-splitter-import')?.addEventListener('click', () => {
+            document.getElementById('book-splitter-file')?.click();
         });
 
-        document.getElementById('book-file').addEventListener('change', async (e) => {
-            const file = e.target.files[0];
+        document.getElementById('book-splitter-file')?.addEventListener('change', async (e) => {
+            const file = e.target?.files?.[0];
             if (!file) return;
 
-            if (file.size > 20 * 1024 * 1024) {
-                this.showStatus('文件大小不能超过20MB', 'error');
+            if (file.size > this.CONFIG.MAX_FILE_SIZE) {
+                this.showStatus(`文件大小不能超过${this.CONFIG.MAX_FILE_SIZE / 1024 / 1024}MB`, 'error');
                 return;
             }
 
             try {
-                const content = await this.readFile(file);
-                this.showStatus('文件导入成功，正在分析章节...', 'info');
+                this.showStatus('正在读取文件...', 'info');
+                const content = await this.tryReadFileWithEncodings(file);
+                this.showStatus('文件读取成功，正在分析章节...', 'info');
                 await this.splitBook(content);
             } catch (error) {
-                this.showStatus('文件读取失败', 'error');
+                this.showStatus(`文件读取失败: ${error.message}`, 'error');
                 console.error('File reading error:', error);
             }
         });
 
-        document.getElementById('start-split').addEventListener('click', async () => {
+        // 分割和分析按钮
+        document.getElementById('book-splitter-split')?.addEventListener('click', async () => {
             if (this.chapters.length === 0) {
                 this.showStatus('请先导入文本文件', 'error');
                 return;
@@ -538,7 +927,7 @@ class BookSplitter {
             await this.splitBook(this.bookContent);
         });
 
-        document.getElementById('split-all').addEventListener('click', async () => {
+        document.getElementById('book-splitter-analyze-all')?.addEventListener('click', async () => {
             if (this.chapters.length === 0) {
                 this.showStatus('请先导入并分割文本', 'error');
                 return;
@@ -546,7 +935,8 @@ class BookSplitter {
             await this.analyzeAllChapters();
         });
 
-        document.getElementById('export-data').addEventListener('click', () => {
+        // 导出和清除按钮
+        document.getElementById('book-splitter-export')?.addEventListener('click', () => {
             if (this.chapters.length === 0) {
                 this.showStatus('没有可导出的数据', 'error');
                 return;
@@ -554,20 +944,36 @@ class BookSplitter {
             this.exportData();
         });
 
-        document.getElementById('clear-data').addEventListener('click', () => {
+        document.getElementById('book-splitter-clear')?.addEventListener('click', () => {
             this.clearData();
         });
 
-        // 关闭模态框
-        window.addEventListener('click', (e) => {
-            if (e.target === modal) {
-                modal.style.display = 'none';
+        // 提示词相关按钮
+        document.getElementById('book-splitter-reset-prompt')?.addEventListener('click', () => {
+            const promptElement = document.getElementById('book-splitter-prompt');
+            if (promptElement) {
+                promptElement.value = this.getDefaultPrompt();
+                this.saveToStorage();
+                this.showStatus('提示词已重置为默认值', 'success');
+            }
+        });
+
+        document.getElementById('book-splitter-save-prompt')?.addEventListener('click', () => {
+            if (this.saveToStorage()) {
+                this.showStatus('提示词已保存', 'success');
             }
         });
 
         // 自动保存提示词更改
-        document.getElementById('split-prompt').addEventListener('input', () => {
+        document.getElementById('book-splitter-prompt')?.addEventListener('input', () => {
             this.saveToStorage();
+        });
+
+        // 关闭模态框
+        window.addEventListener('click', (e) => {
+            if (modal && e.target === modal) {
+                modal.style.display = 'none';
+            }
         });
 
         // 防止意外关闭
@@ -577,10 +983,29 @@ class BookSplitter {
                 e.returnValue = '';
             }
         });
+
+        // 窗口大小变化时调整UI
+        window.addEventListener('resize', () => {
+            const ball = document.getElementById('book-splitter-ball');
+            if (ball) {
+                const maxX = window.innerWidth - ball.offsetWidth;
+                const maxY = window.innerHeight - ball.offsetHeight;
+                const currentX = parseInt(ball.style.left);
+                const currentY = parseInt(ball.style.top);
+
+                if (currentX > maxX) ball.style.left = `${maxX}px`;
+                if (currentY > maxY) ball.style.top = `${maxY}px`;
+            }
+        });
     }
 }
 
 // 初始化拆书工具
 document.addEventListener('DOMContentLoaded', () => {
-    window.bookSplitter = new BookSplitter();
-});
+    try {
+        window.bookSplitter = new BookSplitter();
+    } catch (error) {
+        console.error('BookSplitter initialization failed:', error);
+        alert('初始化失败，请刷新页面重试');
+    }
+})

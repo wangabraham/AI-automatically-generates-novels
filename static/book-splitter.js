@@ -107,7 +107,7 @@ class BookSplitter {
                     <textarea id="book-splitter-prompt" rows="6" placeholder="输入拆书提示词...">${this.getDefaultPrompt()}</textarea>
                 </div>
                 <div id="book-splitter-chapters" class="chapters-containerxxx">
-                    <div class="chapters-scroll"></div>
+                    <div class="ttttt1"></div>
                 </div>
                 <div id="book-splitter-status" class="status-message"></div>
             </div>
@@ -273,20 +273,20 @@ class BookSplitter {
                 border-radius: 4px;
             }
 
-            .chapters-scroll {
+            .ttttt1 {
                 height: 100%;
                 overflow-y: auto;
                 padding: 10px;
             }
 
-            .chapter-item {
+            .okkkkklallala {
                 margin-bottom: 10px;
                 border: 1px solid #dee2e6;
                 border-radius: 4px;
                 overflow: hidden;
             }
 
-            .chapter-header {
+            .xnms66 {
                 padding: 10px 15px;
                 background: #f8f9fa;
                 cursor: pointer;
@@ -295,26 +295,26 @@ class BookSplitter {
                 align-items: center;
             }
 
-            .chapter-header:hover {
+            .xnms66:hover {
                 background: #e9ecef;
             }
 
-            .chapter-title {
+            .llllx {
                 font-weight: 500;
                 color: #212529;
             }
 
-            .chapter-content {
+            .ccccccx {
                 display: none;
                 padding: 15px;
                 background: white;
             }
 
-            .chapter-content.show {
+            .ccccccx.show {
                 display: block;
             }
 
-            .chapter-text {
+            .iiwiozj {
                 width: 100%;
                 min-height: 100px;
                 padding: 10px;
@@ -474,7 +474,7 @@ class BookSplitter {
     }
     async splitBook(content) {
         try {
-            const chaptersContainer = document.querySelector('.chapters-scroll');
+            const chaptersContainer = document.querySelector('.ttttt1');
             if (!chaptersContainer) throw new Error('找不到章节容器元素');
 
             chaptersContainer.innerHTML = '';
@@ -531,15 +531,15 @@ class BookSplitter {
     createChapterElement(title, content, index) {
         return new Promise((resolve) => {
             const container = document.createElement('div');
-            container.className = 'chapter-item';
+            container.className = 'okkkkklallala';
             container.id = this.chapters[index].id;
             container.innerHTML = `
-                <div class="chapter-header">
-                    <span class="chapter-title">${title}</span>
-                    <span class="chapter-status">${this.getStatusIcon('pending')}</span>
+                <div class="xnms66">
+                    <span class="llllx">${title}</span>
+                    <span class="kkkko">${this.getStatusIcon('pending')}</span>
                 </div>
-                <div class="chapter-content">
-                    <textarea class="chapter-text" readonly>${content}</textarea>
+                <div class="ccccccx">
+                    <textarea class="iiwiozj" readonly>${content}</textarea>
                     <div class="chapter-buttons">
                         <button class="primary-button analyze-button">拆解本章</button>
                         <button class="warning-button retry-button" style="display: none;">重试</button>
@@ -548,11 +548,11 @@ class BookSplitter {
                 </div>
             `;
 
-            const chaptersContainer = document.querySelector('.chapters-scroll');
+            const chaptersContainer = document.querySelector('.ttttt1');
             chaptersContainer.appendChild(container);
 
-            const header = container.querySelector('.chapter-header');
-            const chapterContent = container.querySelector('.chapter-content');
+            const header = container.querySelector('.xnms66');
+            const chapterContent = container.querySelector('.ccccccx');
             const analyzeBtn = container.querySelector('.analyze-button');
             const retryBtn = container.querySelector('.retry-button');
 
@@ -579,7 +579,7 @@ class BookSplitter {
     }
 
     updateChapterStatus(container, status) {
-        const statusSpan = container.querySelector('.chapter-status');
+        const statusSpan = container.querySelector('.kkkko');
         if (statusSpan) {
             statusSpan.textContent = this.getStatusIcon(status);
         }
@@ -739,7 +739,7 @@ async analyzeChapter(container, index, isRetry = false) {
             try {
                 localStorage.removeItem(this.CONFIG.STORAGE_KEY);
                 this.chapters = [];
-                document.querySelector('.chapters-scroll').innerHTML = '';
+                document.querySelector('.ttttt1').innerHTML = '';
                 document.getElementById('book-splitter-prompt').value = this.getDefaultPrompt();
                 this.state.totalChapters = 0;
                 this.state.processedChapters = 0;
@@ -840,7 +840,7 @@ async analyzeChapter(container, index, isRetry = false) {
     }
 
     async renderSavedChapters() {
-        const chaptersContainer = document.querySelector('.chapters-scroll');
+        const chaptersContainer = document.querySelector('.ttttt1');
         if (!chaptersContainer) return;
 
         chaptersContainer.innerHTML = '';

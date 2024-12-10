@@ -655,6 +655,7 @@ ${style}
                             <div class="chapter-buttons">
                                 <button onclick="resetChapterOutline(this)">重置细纲</button>
                                 <button onclick="copyToTemp(this)">复制到生成区域</button>
+
                             </div>
                         </div>
                         <div>
@@ -663,8 +664,10 @@ ${style}
                             <div class="chapter-buttons">
                                 <button onclick="generateContent(this)">生成正文</button>
                                 <button onclick="regenerateContent(this)">重写正文</button>
-                                <button onclick="resetChapterContent(this)">重置正文</button>
-                            </div>
+
+			<button onclick="resetChapterContent(this)">重置正文</button>
+
+				</div>
                         </div>
                         <button onclick="deleteChapter(this)" class="delete-button">删除章节</button>
                     </div>
@@ -1067,6 +1070,7 @@ function showContextMenu(e, config, target) {
 <script src="{{ url_for('static', filename='prompt-editor.js') }}"></script>
 <script src="{{ url_for('static', filename='knowledge-base.js') }}"></script>
 <script src="{{ url_for('static', filename='book-splitter.js') }}"></script>
+<script src="{{ url_for('static', filename='ai-update.js') }}"></script>
 
 
 </body>

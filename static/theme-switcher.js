@@ -8,7 +8,6 @@ class EnhancedStyleSwitcher {
         this.textAreas = [];
         this.menuOpen = false;
         this.activeTextArea = null;
-        this.animationsEnabled = true;
         this.init();
     }
 
@@ -34,21 +33,11 @@ class EnhancedStyleSwitcher {
                     '--shadow': '0 4px 12px rgba(33, 150, 243, 0.1)',
                     '--shadow-hover': '0 8px 24px rgba(33, 150, 243, 0.2)',
                     '--transition': 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)'
-                }
-            },
-            apple: {
-                vars: {
-                    '--primary-color': '#000000',
-                    '--secondary-color': '#333333',
-                    '--accent-color': '#666666',
-                    '--bg-light': '#ffffff',
-                    '--bg-dark': '#f5f5f7',
-                    '--text-color': '#1d1d1f',
-                    '--text-secondary': '#86868b',
-                    '--border-color': '#d2d2d7',
-                    '--shadow': '0 2px 8px rgba(0, 0, 0, 0.05)',
-                    '--shadow-hover': '0 4px 16px rgba(0, 0, 0, 0.1)',
-                    '--transition': 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
+                },
+                styles: {
+                    borderRadius: '12px',
+                    transformScale: '1.02',
+                    textAreaPadding: '16px'
                 }
             },
             dark: {
@@ -64,6 +53,31 @@ class EnhancedStyleSwitcher {
                     '--shadow': '0 4px 12px rgba(0, 0, 0, 0.3)',
                     '--shadow-hover': '0 8px 24px rgba(0, 0, 0, 0.4)',
                     '--transition': 'all 0.3s ease'
+                },
+                styles: {
+                    borderRadius: '8px',
+                    transformScale: '1',
+                    textAreaPadding: '14px'
+                }
+            },
+            flat: {
+                vars: {
+                    '--primary-color': '#9E9E9E',
+                    '--secondary-color': '#757575',
+                    '--accent-color': '#616161',
+                    '--bg-light': '#F5F5F5',
+                    '--bg-dark': '#EEEEEE',
+                    '--text-color': '#212121',
+                    '--text-secondary': '#757575',
+                    '--border-color': '#E0E0E0',
+                    '--shadow': 'none',
+                    '--shadow-hover': '0 2px 4px rgba(0, 0, 0, 0.1)',
+                    '--transition': 'all 0.2s linear'
+                },
+                styles: {
+                    borderRadius: '4px',
+                    transformScale: '1',
+                    textAreaPadding: '12px'
                 }
             },
             nature: {
@@ -79,6 +93,11 @@ class EnhancedStyleSwitcher {
                     '--shadow': '0 4px 12px rgba(76, 175, 80, 0.1)',
                     '--shadow-hover': '0 8px 24px rgba(76, 175, 80, 0.2)',
                     '--transition': 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)'
+                },
+                styles: {
+                    borderRadius: '16px',
+                    transformScale: '1.03',
+                    textAreaPadding: '18px'
                 }
             },
             sunset: {
@@ -94,6 +113,11 @@ class EnhancedStyleSwitcher {
                     '--shadow': '0 4px 12px rgba(255, 152, 0, 0.1)',
                     '--shadow-hover': '0 8px 24px rgba(255, 152, 0, 0.2)',
                     '--transition': 'all 0.3s ease-in-out'
+                },
+                styles: {
+                    borderRadius: '20px',
+                    transformScale: '1.02',
+                    textAreaPadding: '16px'
                 }
             }
         };
@@ -104,32 +128,37 @@ class EnhancedStyleSwitcher {
             grid: {
                 containerStyle: {
                     display: 'grid',
-                    gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
                     gap: '20px',
-                    padding: '20px',
-                    width: '100%',
-                    boxSizing: 'border-box'
+                    padding: '20px'
+                },
+                textAreaStyle: {
+                    height: 'auto',
+                    minHeight: '100px',
+                    maxHeight: '250px'
                 }
             },
-            apple: {
+            flex: {
                 containerStyle: {
-                    display: 'grid',
-                    gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))',
-                    gap: '30px',
-                    padding: '30px',
-                    width: '100%',
-                    boxSizing: 'border-box',
-                    background: '#f5f5f7'
+                    display: 'flex',
+                    flexWrap: 'wrap',
+                    gap: '20px',
+                    padding: '20px'
+                },
+                textAreaStyle: {
+                    flex: '1 1 300px',
+                    height: '150px'
                 }
             },
             masonry: {
                 containerStyle: {
-                    columnCount: 'auto',
-                    columnWidth: '350px',
+                    columnCount: 3,
                     columnGap: '20px',
-                    padding: '20px',
-                    width: '100%',
-                    boxSizing: 'border-box'
+                    padding: '20px'
+                },
+                textAreaStyle: {
+                    breakInside: 'avoid',
+                    marginBottom: '20px'
                 }
             },
             centered: {
@@ -138,11 +167,12 @@ class EnhancedStyleSwitcher {
                     flexDirection: 'column',
                     alignItems: 'center',
                     gap: '20px',
-                    padding: '20px',
-                    width: '100%',
-                    maxWidth: '1200px',
-                    margin: '0 auto',
-                    boxSizing: 'border-box'
+                    padding: '20px'
+                },
+                textAreaStyle: {
+                    width: '80%',
+                    maxWidth: '800px',
+                    height: 'auto'
                 }
             }
         };
@@ -154,20 +184,20 @@ class EnhancedStyleSwitcher {
         
         const switcherHTML = `
             <div class="theme-ball">
-                <div class="theme-text">主题切换</div>
+                <div class="theme-text">主题切换,可拖拽</div>
                 <div class="theme-menu">
                     <div class="menu-section">
                         <h3>主题风格</h3>
-                        <button class="theme-btn" data-theme="elegant">优雅蓝</button>
-                        <button class="theme-btn" data-theme="apple">苹果白</button>
-                        <button class="theme-btn" data-theme="dark">冷峻黑</button>
-                        <button class="theme-btn" data-theme="nature">自然绿</button>
-                        <button class="theme-btn" data-theme="sunset">夕阳橙</button>
+                        <button class="theme-btn elegant-theme" data-theme="elegant">优雅蓝</button>
+                        <button class="theme-btn dark-theme" data-theme="dark">冷峻黑</button>
+                        <button class="theme-btn flat-theme" data-theme="flat">简约白</button>
+                        <button class="theme-btn nature-theme" data-theme="nature">自然绿</button>
+                        <button class="theme-btn sunset-theme" data-theme="sunset">夕阳橙</button>
                     </div>
                     <div class="menu-section">
                         <h3>布局方式</h3>
                         <button class="layout-btn" data-layout="grid">网格</button>
-                        <button class="layout-btn" data-layout="apple">苹果</button>
+                        <button class="layout-btn" data-layout="flex">弹性</button>
                         <button class="layout-btn" data-layout="masonry">瀑布</button>
                         <button class="layout-btn" data-layout="centered">居中</button>
                     </div>
@@ -178,8 +208,8 @@ class EnhancedStyleSwitcher {
                     </div>
                     <div class="menu-section">
                         <h3>其他设置</h3>
-                        <button class="edit-btn" id="resetData">清除数据</button>
-                        <button class="edit-btn" id="toggleAnimations">动画开关</button>
+                        <button class="settings-btn" id="resetData">清除所有数据</button>
+                        <button class="settings-btn" id="toggleAnimations">动画开关</button>
                     </div>
                 </div>
             </div>
@@ -193,105 +223,66 @@ class EnhancedStyleSwitcher {
         this.initializeDragging(switcher);
         this.initializeMenuBehavior(switcher);
     }
-
-    addSwitcherStyles() {
+addSwitcherStyles() {
         const styles = document.createElement('style');
         styles.textContent = `
             .enhanced-theme-switcher {
+    pointer-events: auto;
+    touch-action: none;
+    user-select: none;
+    pointer-events: auto;
+    touch-action: none;
+    user-select: none;
                 position: fixed !important;
-                right: 15% !important;
-                bottom: 15% !important;
+                right: 20vw !important;
+                bottom: 20vh !important;
                 z-index: 9999;
-                pointer-events: auto;
-                touch-action: none;
-                user-select: none;
             }
 
             .theme-ball {
-                width: 60px;
-                height: 60px;
+                width: 80px;
+                height: 80px;
                 background: var(--primary-color);
-                border-radius: 30px;
+                border-radius: 50%;
                 cursor: pointer;
                 box-shadow: var(--shadow);
-                transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+                transition: var(--transition);
                 position: relative;
                 display: flex;
                 align-items: center;
                 justify-content: center;
             }
 
-            .theme-ball:hover {
-                width: 120px;
-                border-radius: 30px;
-            }
-
             .theme-text {
                 color: white;
                 font-size: 14px;
-                white-space: nowrap;
-                opacity: 0;
-                transition: opacity 0.3s;
+                font-weight: 500;
+                text-align: center;
+                pointer-events: none;
             }
 
-            .theme-ball:hover .theme-text {
-                opacity: 1;
+            .theme-ball:hover {
+                transform: scale(1.1);
+                box-shadow: var(--shadow-hover);
             }
 
             .theme-menu {
                 position: absolute;
                 bottom: 100%;
                 right: 0;
-                background: rgba(255, 255, 255, 0.95);
-                backdrop-filter: blur(10px);
-                border-radius: 20px;
-                padding: 20px;
+                background: white;
+                border-radius: 16px;
+                padding: 15px;
                 margin-bottom: 15px;
                 box-shadow: var(--shadow);
                 display: none;
                 flex-direction: column;
-                gap: 15px;
-                min-width: 250px;
-                transform-origin: bottom right;
-                animation: dynamicIslandShow 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            }
-
-            @keyframes dynamicIslandShow {
-                from {
-                    transform: scale(0.9);
-                    opacity: 0;
-                }
-                to {
-                    transform: scale(1);
-                    opacity: 1;
-                }
-            }
-
-            .text-area {
-                width: 100%;
-                resize: vertical;
-                border: none;
-                background: var(--bg-light);
-                color: var(--text-color);
-                font-family: system-ui, -apple-system, sans-serif;
-                font-size: 16px;
-                line-height: 1.6;
-                padding: 20px;
-                border-radius: 14px;
-                box-shadow: var(--shadow);
-                transition: var(--transition);
-                overflow-y: auto;
-                -webkit-overflow-scrolling: touch;
-                height: 150px;
-                min-height: 100px;
-                margin: 0;
-                box-sizing: border-box;
-                display: block;
-            }
-
-            .text-area:focus {
-                outline: none;
-                box-shadow: var(--shadow-hover);
+                gap: 10px;
+                min-width: 200px;
+                max-width: 280px;
+                backdrop-filter: blur(10px);
+                background: rgba(255, 255, 255, 0.98);
+                border: 1px solid var(--border-color);
             }
 
             .menu-section {
@@ -307,7 +298,7 @@ class EnhancedStyleSwitcher {
             .menu-section h3 {
                 color: var(--text-secondary);
                 font-size: 14px;
-                margin: 0 0 10px;
+                margin-bottom: 10px;
                 font-weight: 500;
                 display: flex;
                 align-items: center;
@@ -322,17 +313,17 @@ class EnhancedStyleSwitcher {
                 border-radius: 2px;
             }
 
-            .theme-btn, .layout-btn, .edit-btn {
+            .theme-btn, .layout-btn, .settings-btn, .edit-btn {
                 width: 100%;
-                padding: 12px;
+                padding: 8px;
+                margin: 3px 0;
                 border: none;
-                border-radius: 10px;
-                background: var(--bg-light);
-                color: var(--text-color);
-                font-weight: 500;
+                border-radius: 8px;
                 cursor: pointer;
                 transition: var(--transition);
-                text-align: left;
+                font-weight: 500;
+                background: var(--bg-light);
+                color: var(--text-color);
                 display: flex;
                 align-items: center;
                 justify-content: space-between;
@@ -340,9 +331,27 @@ class EnhancedStyleSwitcher {
                 overflow: hidden;
             }
 
-            .theme-btn:hover, .layout-btn:hover, .edit-btn:hover {
+            .theme-btn::after, .layout-btn::after, .settings-btn::after, .edit-btn::after {
+                content: '';
+                position: absolute;
+                width: 5px;
+                height: 5px;
+                background: var(--primary-color);
+                border-radius: 50%;
+                right: 10px;
+                opacity: 0;
+                transition: var(--transition);
+            }
+
+            .theme-btn:hover::after, .layout-btn:hover::after, 
+            .settings-btn:hover::after, .edit-btn:hover::after {
+                opacity: 1;
+            }
+
+            .theme-btn:hover, .layout-btn:hover, 
+            .settings-btn:hover, .edit-btn:hover {
+                transform: translateX(-5px);
                 background: var(--bg-dark);
-                transform: translateX(5px);
             }
 
             .active-mode {
@@ -350,21 +359,31 @@ class EnhancedStyleSwitcher {
                 color: white !important;
             }
 
+            /* 专注模式样式 */
             .focus-mode .text-area:not(:focus) {
                 opacity: 0.5;
             }
 
             .focus-mode .text-area:focus {
+    min-height: 150px;
+    max-height: 400px;
+    overflow-y: auto;
+    min-height: 150px;
+    max-height: 400px;
+    overflow-y: auto;
                 position: fixed !important;
                 top: 50%;
                 left: 50%;
                 transform: translate(-50%, -50%);
                 width: 80%;
-                max-width: 600px;
-                height: 60vh;
+                max-width: 700px;
+                height: 60vh; max-height: 400px;
                 z-index: 1000;
+                background: var(--bg-light);
+                box-shadow: var(--shadow-hover);
             }
 
+            /* 遮罩层 */
             .overlay {
                 display: none;
                 position: fixed !important;
@@ -381,56 +400,124 @@ class EnhancedStyleSwitcher {
                 display: block;
             }
 
-            .auto-center .text-area:focus {
+            /* 自动居中模式 */
+.auto-center .text-area:focus {
+    position: relative;
+    top: 50%;
+    transform: translateY(-50%);
+    margin: 20px auto;
+    width: 80%;
+    max-width: 700px;
+    min-height: 150px;
+    max-height: 350px;
+    overflow-y: auto;
+    position: relative;
+    top: 50%;
+    transform: translateY(-50%);
+    margin: 20px auto;
+    width: 80%;
+    max-width: 700px;
+    min-height: 150px;
+    max-height: 350px;
+    overflow-y: auto;
                 position: relative;
+                top: 50%;
+                transform: translateY(-50%);
                 margin: 20px auto;
                 width: 80%;
-                max-width: 600px;
+                max-width: 700px;
             }
 
-            .notification-container {
-                position: fixed !important;
-                top: 20px;
-                right: 15% !important;
-                z-index: 10000;
-            }
-
-            .notification {
-                background: white;
-                border-radius: 8px;
-                box-shadow: var(--shadow);
-                margin-bottom: 10px;
-                transform-origin: top right;
-                animation: notificationSlide 0.3s ease, notificationFade 0.3s ease 2.7s;
-                padding: 12px 20px;
-            }
-
-            @keyframes notificationSlide {
-                from { transform: translateX(100%); opacity: 0;
-}
-                to { transform: translateX(0); opacity: 1; }
-            }
-
-            @keyframes notificationFade {
-                to { opacity: 0; transform: translateY(-10px); }
-            }
-
+            /* 响应式设计 */
             @media (max-width: 768px) {
+    .text-area {
+        min-height: 60px;
+        max-height: 300px;
+    }
                 .theme-menu {
-                    width: calc(100vw - 40px);
-                    right: 20px;
-                }
-
-                .text-area {
-                    font-size: 16px;
+                    position: fixed !important;
+                    bottom: 100px;
+                    right: 10px;
+                    width: calc(100% - 20px);
+                    max-width: none;
                 }
 
                 .focus-mode .text-area:focus {
+    min-height: 150px;
+    max-height: 400px;
+    overflow-y: auto;
+    min-height: 150px;
+    max-height: 400px;
+    overflow-y: auto;
                     width: 95%;
+                    height: 70vh;
                 }
+            }
+
+            /* 动画效果 */
+            @keyframes slideIn {
+                from {
+                    opacity: 0;
+                    transform: translateY(10px);
+                }
+                to {
+                    opacity: 1;
+                    transform: translateY(0);
+                }
+            }
+
+            @keyframes fadeIn {
+                from { opacity: 0; }
+                to { opacity: 1; }
+            }
+
+            .theme-menu.show {
+                animation: slideIn 0.3s ease;
+            }
+
+            /* 预览效果 */
+            .theme-preview {
+                position: absolute;
+                right: calc(100% + 10px);
+                top: 50%;
+                transform: translateY(-50%);
+                width: 150px;
+                height: 100px;
+                border-radius: 8px;
+                box-shadow: var(--shadow);
+                pointer-events: none;
+                opacity: 0;
+                transition: var(--transition);
+            }
+
+            .theme-btn:hover .theme-preview {
+                opacity: 1;
             }
         `;
         document.head.appendChild(styles);
+    }
+
+    initializeMenuBehavior(switcher) {
+        const themeBall = switcher.querySelector('.theme-ball');
+        const themeMenu = switcher.querySelector('.theme-menu');
+        
+        // 点击切换菜单显示状态
+        themeBall.addEventListener('click', (e) => {
+            if (e.target.closest('.theme-menu')) return;
+            this.menuOpen = !this.menuOpen;
+            themeMenu.style.display = this.menuOpen ? 'flex' : 'none';
+            if (this.menuOpen) {
+                themeMenu.classList.add('show');
+            }
+        });
+
+        // 点击外部关闭菜单
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.enhanced-theme-switcher')) {
+                this.menuOpen = false;
+                themeMenu.style.display = 'none';
+            }
+        });
     }
 
     initializeButtons(switcher) {
@@ -451,26 +538,26 @@ class EnhancedStyleSwitcher {
             });
         });
 
-        // 功能按钮
+        // 编辑模式按钮
         const focusBtn = switcher.querySelector('#toggleFocus');
         const autoCenterBtn = switcher.querySelector('#toggleAutoCenter');
-        const resetBtn = switcher.querySelector('#resetData');
-        const animationsBtn = switcher.querySelector('#toggleAnimations');
         
         focusBtn.addEventListener('click', () => this.toggleFocusMode());
         autoCenterBtn.addEventListener('click', () => this.toggleAutoCenter());
+
+        // 设置按钮
+        const resetBtn = switcher.querySelector('#resetData');
+        const animationsBtn = switcher.querySelector('#toggleAnimations');
+
         resetBtn.addEventListener('click', () => this.resetAllData());
         animationsBtn.addEventListener('click', () => this.toggleAnimations());
     }
-
-    initializeDragging(element) {
+initializeDragging(element) {
         let isDragging = false;
         let currentX;
         let currentY;
         let initialX;
         let initialY;
-        let xOffset = 0;
-        let yOffset = 0;
 
         const dragStart = (e) => {
             if (e.target.closest('.theme-menu')) return;
@@ -478,11 +565,11 @@ class EnhancedStyleSwitcher {
             isDragging = true;
             
             if (e.type === "touchstart") {
-                initialX = e.touches[0].clientX - xOffset;
-                initialY = e.touches[0].clientY - yOffset;
+                initialX = e.touches[0].clientX - element.offsetLeft;
+                initialY = e.touches[0].clientY - element.offsetTop;
             } else {
-                initialX = e.clientX - xOffset;
-                initialY = e.clientY - yOffset;
+                initialX = e.clientX - element.offsetLeft;
+                initialY = e.clientY - element.offsetTop;
             }
         };
 
@@ -502,51 +589,32 @@ class EnhancedStyleSwitcher {
             currentX = clientX - initialX;
             currentY = clientY - initialY;
 
-            xOffset = currentX;
-            yOffset = currentY;
-
+            // 边界检查
             const maxX = window.innerWidth - element.offsetWidth;
             const maxY = window.innerHeight - element.offsetHeight;
 
             currentX = Math.min(Math.max(0, currentX), maxX);
             currentY = Math.min(Math.max(0, currentY), maxY);
 
-            element.style.transform = `translate(${currentX}px, ${currentY}px)`;
+            element.style.left = `${currentX}px`;
+            element.style.top = `${currentY}px`;
         };
 
         const dragEnd = () => {
+            if (!isDragging) return;
             isDragging = false;
             this.saveSwitcherPosition(element);
         };
 
+        // 鼠标事件
         element.addEventListener('mousedown', dragStart);
         document.addEventListener('mousemove', dragMove);
         document.addEventListener('mouseup', dragEnd);
 
+        // 触摸事件
         element.addEventListener('touchstart', dragStart, { passive: false });
         document.addEventListener('touchmove', dragMove, { passive: false });
         document.addEventListener('touchend', dragEnd);
-    }
-
-    initializeMenuBehavior(switcher) {
-        const themeBall = switcher.querySelector('.theme-ball');
-        const themeMenu = switcher.querySelector('.theme-menu');
-        
-        themeBall.addEventListener('click', (e) => {
-            if (e.target.closest('.theme-menu')) return;
-            this.menuOpen = !this.menuOpen;
-            themeMenu.style.display = this.menuOpen ? 'flex' : 'none';
-            if (this.menuOpen) {
-                themeMenu.classList.add('show');
-            }
-        });
-
-        document.addEventListener('click', (e) => {
-            if (!e.target.closest('.enhanced-theme-switcher')) {
-                this.menuOpen = false;
-                themeMenu.style.display = 'none';
-            }
-        });
     }
 
     initializeTextAreas() {
@@ -555,84 +623,62 @@ class EnhancedStyleSwitcher {
             this.setupTextArea(textArea);
         });
 
+        // 创建遮罩层
         const overlay = document.createElement('div');
         overlay.className = 'overlay';
         document.body.appendChild(overlay);
     }
 
     setupTextArea(textArea) {
+        // 设置基础样式
+        this.applyTextAreaStyles(textArea);
+
+        // 自动调整高度
+        textArea.addEventListener('input', () => {
+            this.autoResizeTextArea(textArea);
+        });
+
+        // 焦点事件处理
         textArea.addEventListener('focus', () => {
-            this.activeTextArea = textArea;
-            textArea.style.boxShadow = 'var(--shadow-hover)';
-            if (document.body.classList.contains('focus-mode')) {
-                document.querySelector('.overlay').classList.add('active');
-            }
+            this.handleTextAreaFocus(textArea);
         });
 
         textArea.addEventListener('blur', () => {
-            this.activeTextArea = null;
-            textArea.style.boxShadow = 'var(--shadow)';
-            if (document.body.classList.contains('focus-mode')) {
-                document.querySelector('.overlay').classList.remove('active');
-            }
+            this.handleTextAreaBlur(textArea);
         });
 
+        // 保存内容变化
         textArea.addEventListener('change', () => {
             this.saveTextAreaContent(textArea);
         });
 
+        // 初始化内容
         this.loadTextAreaContent(textArea);
     }
 
-    applyTheme(themeName) {
-        if (!this.themes[themeName]) return;
-
-        const theme = this.themes[themeName];
-        const root = document.documentElement;
-
-        Object.entries(theme.vars).forEach(([property, value]) => {
-            root.style.setProperty(property, value);
-        });
-
-        this.currentTheme = themeName;
-        this.updateActiveButtons('theme-btn', themeName);
-        this.saveSettings();
-        this.showNotification(`主题已切换到: ${themeName}`, 'success');
+    autoResizeTextArea(textArea) {
+        textArea.style.height = 'auto';
+        textArea.style.height = textArea.scrollHeight + 'px';
     }
 
-    applyLayout(layoutName) {
-        if (!this.layouts[layoutName]) return;
+    handleTextAreaFocus(textArea) {
+        this.activeTextArea = textArea;
+        textArea.style.borderColor = 'var(--primary-color)';
+        textArea.style.boxShadow = 'var(--shadow-hover)';
 
-        const layout = this.layouts[layoutName];
-        const containers = document.querySelectorAll('.container');
+        if (document.body.classList.contains('focus-mode')) {
+            document.querySelector('.overlay').classList.add('active');
+        }
+    }
 
-        containers.forEach(container => {
-            Object.assign(container.style, layout.containerStyle);
-            
-            const textAreas = container.querySelectorAll('.text-area');
-            textAreas.forEach(textArea => {
-                switch(layoutName) {
-                    case 'grid':
-                        textArea.style.height = '15px';
-                        break;
-                    case 'apple':
-                        textArea.style.height = '150px';
-                        break;
-                    case 'masonry':
-                        textArea.style.height = 'auto';
-                        textArea.style.minHeight = '100px';
-                        break;
-                    case 'centered':
-                        textArea.style.height = '200px';
-                        textArea.style.maxWidth = '400px';
-                        break;
-                }
-            });
-        });
+    handleTextAreaBlur(textArea) {
+        this.activeTextArea = null;
+        textArea.style.borderColor = 'var(--border-color)';
+        textArea.style.boxShadow = 'var(--shadow)';
 
-        this.currentLayout = layoutName;
-        this.saveSettings();
-        this.showNotification(`布局已切换到: ${layoutName}`, 'success');
+        if (document.body.classList.contains('focus-mode')) {
+            document.querySelector('.overlay').classList.remove('active');
+        }
     }
 
     toggleFocusMode() {
@@ -653,13 +699,93 @@ class EnhancedStyleSwitcher {
         this.saveSettings();
     }
 
-    toggleAnimations() {
-        this.animationsEnabled = !this.animationsEnabled;
-        document.documentElement.style.setProperty('--transition', 
-            this.animationsEnabled ? this.themes[this.currentTheme].vars['--transition'] : 'none');
-        
+    applyTextAreaStyles(textArea) {
+        const theme = this.themes[this.currentTheme];
+        const baseStyles = {
+            width: '100%',
+            minHeight: '80px',
+            padding: theme.styles.textAreaPadding,
+            borderRadius: theme.styles.borderRadius,
+            border: '1px solid var(--border-color)',
+            backgroundColor: 'var(--bg-light)',
+            color: 'var(--text-color)',
+            transition: 'var(--transition)',
+            boxShadow: 'var(--shadow)',
+            fontFamily: 'inherit',
+            fontSize: '16px',
+            lineHeight: '1.6',
+            resize: 'vertical',
+            outline: 'none'
+        };
+
+        Object.assign(textArea.style, baseStyles);
+    }
+
+    initializeResizeObserver() {
+        const resizeObserver = new ResizeObserver(entries => {
+            for (const entry of entries) {
+                if (entry.target.classList.contains('text-area')) {
+                    this.adjustTextAreaSize(entry.target);
+                }
+            }
+        });
+
+        this.textAreas.forEach(textArea => {
+            resizeObserver.observe(textArea);
+        });
+    }
+
+    adjustTextAreaSize(textArea) {
+        if (document.body.classList.contains('auto-center') && textArea === this.activeTextArea) {
+            const viewportHeight = window.innerHeight;
+            const textAreaHeight = textArea.offsetHeight;
+            textArea.style.marginTop = `${(viewportHeight - textAreaHeight) / 2}px`;
+        }
+    }
+applyTheme(themeName) {
+        if (!this.themes[themeName]) return;
+
+        const theme = this.themes[themeName];
+        const root = document.documentElement;
+
+        // 应用CSS变量
+        Object.entries(theme.vars).forEach(([property, value]) => {
+            root.style.setProperty(property, value);
+        });
+
+        // 应用主题特定样式
+        this.textAreas.forEach(textArea => {
+            this.applyTextAreaStyles(textArea);
+        });
+
+        // 更新当前主题并保存设置
+        this.currentTheme = themeName;
+        this.updateActiveButtons('theme-btn', themeName);
         this.saveSettings();
-        this.showNotification(`动画效果已${this.animationsEnabled ? '开启' : '关闭'}`, 'success');
+
+        // 应用主题特定动画
+        this.showNotification(`主题已切换到: ${themeName}`, 'success');
+    }
+
+    applyLayout(layoutName) {
+        if (!this.layouts[layoutName]) return;
+
+        const layout = this.layouts[layoutName];
+        const containers = document.querySelectorAll('.container');
+
+        containers.forEach(container => {
+            Object.assign(container.style, layout.containerStyle);
+            
+            const textAreas = container.querySelectorAll('.text-area');
+            textAreas.forEach(textArea => {
+                Object.assign(textArea.style, layout.textAreaStyle);
+                this.autoResizeTextArea(textArea);
+            });
+        });
+
+        this.currentLayout = layoutName;
+        this.saveSettings();
+        this.showNotification(`布局已切换到: ${layoutName}`, 'success');
     }
 
     updateActiveButtons(className, activeValue) {
@@ -688,73 +814,50 @@ class EnhancedStyleSwitcher {
         if (savedSettings) {
             const settings = JSON.parse(savedSettings);
             
+            // 应用主题和布局
             this.applyTheme(settings.theme);
             this.applyLayout(settings.layout);
+            
+            // 恢复位置
             this.restoreSwitcherPosition(settings.position);
             
-            if (settings.focusMode) {
-                document.body.classList.add('focus-mode');
-                document.querySelector('#toggleFocus').classList.add('active-mode');
-            }
+            // 恢复模式设置
+            if (settings.focusMode) document.body.classList.add('focus-mode');
+            if (settings.autoCenter) document.body.classList.add('auto-center');
             
-            if (settings.autoCenter) {
-                document.body.classList.add('auto-center');
-                document.querySelector('#toggleAutoCenter').classList.add('active-mode');
-            }
-            
+            // 恢复动画设置
             this.animationsEnabled = settings.animations ?? true;
             if (!this.animationsEnabled) {
                 document.documentElement.style.setProperty('--transition', 'none');
             }
-        }
-    }
 
-    initializeResizeObserver() {
-        const resizeObserver = new ResizeObserver(entries => {
-            for (const entry of entries) {
-                if (entry.target.classList.contains('text-area')) {
-                    this.adjustTextAreaSize(entry.target);
-                }
-            }
-        });
-
-        this.textAreas.forEach(textArea => {
-            resizeObserver.observe(textArea);
-        });
-    }
-
-    adjustTextAreaSize(textArea) {
-        if (document.body.classList.contains('auto-center') && textArea === this.activeTextArea) {
-            const viewportHeight = window.innerHeight;
-            const textAreaHeight = textArea.offsetHeight;
-            textArea.style.marginTop = `${(viewportHeight - textAreaHeight) / 2}px`;
-        } else {
-            textArea.style.marginTop = '';
+            // 更新按钮状态
+            this.updateActiveButtons('theme-btn', settings.theme);
+            this.updateActiveButtons('layout-btn', settings.layout);
         }
     }
 
     getSwitcherPosition() {
         const switcher = document.querySelector('.enhanced-theme-switcher');
-        const transform = switcher.style.transform;
-        const matches = transform.match(/translate\(([^,]+),\s*([^)]+)\)/);
-        return matches ? {
-            x: parseFloat(matches[1]),
-            y: parseFloat(matches[2])
-        } : { x: 0, y: 0 };
+        return {
+            left: switcher.style.left || '20px',
+            top: switcher.style.top || '20px'
+        };
     }
 
     saveSwitcherPosition(element) {
-        const transform = element.style.transform;
-        localStorage.setItem('theme-switcher-position', transform);
+        const position = {
+            left: element.style.left,
+            top: element.style.top
+        };
+        this.saveSettings();
     }
 
     restoreSwitcherPosition(position) {
         const switcher = document.querySelector('.enhanced-theme-switcher');
-        if (switcher) {
-            const savedPosition = localStorage.getItem('theme-switcher-position');
-            if (savedPosition) {
-                switcher.style.transform = savedPosition;
-            }
+        if (switcher && position) {
+            switcher.style.left = position.left;
+            switcher.style.top = position.top;
         }
     }
 
@@ -770,6 +873,7 @@ class EnhancedStyleSwitcher {
             const savedContent = localStorage.getItem(`textarea-content-${id}`);
             if (savedContent) {
                 textArea.value = savedContent;
+                this.autoResizeTextArea(textArea);
             }
         }
     }
@@ -782,27 +886,88 @@ class EnhancedStyleSwitcher {
         }
     }
 
+    toggleAnimations() {
+        this.animationsEnabled = !this.animationsEnabled;
+        document.documentElement.style.setProperty('--transition', 
+            this.animationsEnabled ? this.themes[this.currentTheme].vars['--transition'] : 'none');
+        
+        this.saveSettings();
+        this.showNotification(`动画效果已${this.animationsEnabled ? '开启' : '关闭'}`, 'success');
+    }
+
     showNotification(message, type = 'info') {
+        const notification = document.createElement('div');
+        notification.className = `notification ${type}`;
+        notification.innerHTML = `
+            <div class="notification-content">
+                <span class="notification-icon">${type === 'success' ? '✓' : 'ℹ'}</span>
+                <span class="notification-message">${message}</span>
+            </div>
+        `;
+
         if (!document.querySelector('.notification-container')) {
             const container = document.createElement('div');
             container.className = 'notification-container';
             document.body.appendChild(container);
         }
 
-        const notification = document.createElement('div');
-        notification.className = `notification ${type}`;
-        notification.innerHTML = `
-            <div class="notification-content">
-                <span class="notification-message">${message}</span>
-            </div>
-        `;
+        const container = document.querySelector('.notification-container');
+        container.appendChild(notification);
 
-        document.querySelector('.notification-container').appendChild(notification);
+        // 添加通知样式
+        if (!document.querySelector('#notification-styles')) {
+            const notificationStyles = document.createElement('style');
+            notificationStyles.id = 'notification-styles';
+            notificationStyles.textContent = `
+                .notification-container {
+                    position: fixed !important;
+                    top: 20px;
+                    right: 20vw !important;
+                    z-index: 10000;
+                }
+
+                .notification {
+                    background: white;
+                    border-radius: 8px;
+                    box-shadow: var(--shadow);
+                    margin-bottom: 10px;
+                    transform-origin: top right;
+                    animation: notificationSlide 0.3s ease, notificationFade 0.3s ease 2.7s;
+                }
+
+                .notification-content {
+                    display: flex;
+                    align-items: center;
+                    padding: 12px 20px;
+                    gap: 10px;
+                }
+
+                .notification-icon {
+                    color: var(--primary-color);
+                    font-weight: bold;
+                }
+
+                .notification-message {
+                    color: var(--text-color);
+                }
+
+                @keyframes notificationSlide {
+                    from { transform: translateX(100%); opacity: 0; }
+                    to { transform: translateX(0); opacity: 1; }
+                }
+
+                @keyframes notificationFade {
+                    to { opacity: 0; transform: translateY(-10px); }
+                }
+            `;
+            document.head.appendChild(notificationStyles);
+        }
+
         setTimeout(() => notification.remove(), 3000);
     }
 }
 
-// 初始化主题切换器
+// 初始化
 document.addEventListener('DOMContentLoaded', () => {
     const styleSwitcher = new EnhancedStyleSwitcher();
 });

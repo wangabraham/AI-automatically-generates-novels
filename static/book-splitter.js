@@ -609,7 +609,7 @@ async analyzeChapter(container, index, isRetry = false) {
 
     try {
         // Construct the analysis prompt
-        const prompt = `${basePrompt}\n\n章节标题：${chapter.title}\n\n章节内容：${chapter.content}`;
+        const prompt = `\n\n章节标题：${chapter.title}\n\n章节内容：${chapter.content} \n\n${basePrompt}`;
 
         // Make the API request with simplified body
         const response = await this.makeRequest('/gen', {

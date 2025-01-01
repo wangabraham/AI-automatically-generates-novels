@@ -1,68 +1,126 @@
+
 from flask import Flask, request, Response, render_template
-import requests
+import dashscope
 import json
 import logging
+from http import HTTPStatus
 
 app = Flask(__name__)
 logging.basicConfig(level=logging.DEBUG)
 
-# 通义千问API URL
-TONGYI_QIANWEN_API_URL = "https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions"
+# API Configurations
+API_KEY_1 = 'xxxx'  # 通义千问 API Key
+API_KEY_2 = 'xxxx'  # 可以使用不同的 API Key
 
-# 配置API密钥
-API_KEY = ""  # 请替换为您的API密钥
+# 设置通义千问API密钥
+dashscope.api_key = API_KEY_1
 
 @app.route('/')
 def index():
     return render_template('index.html')
 
 @app.route('/gen', methods=['POST'])
-def generate_stream():
+def generate():
     data = request.json
     prompt = data.get('prompt', '')
-    app.logger.debug(f"Received prompt: {prompt}")
-
-    def generate_stream_inner(prompt):
+    app.logger.debug(f"Received prompt for gen: {prompt}")
+    
+    def generate_stream():
         try:
-            # 创建Qianwen API请求
-            headers = {
-                "Authorization": f"Bearer {API_KEY}",
-                "Content-Type": "application/json"
-            }
-            response = requests.post(
-                TONGYI_QIANWEN_API_URL,
-                headers=headers,
-                json={
-                    "model": "qwen-max",  # 使用qwen-max模型
-                    "messages": [{"role": "user", "content": prompt}],
-                    "stream": True
-                },
-                stream=True
+            response = dashscope.Generation.call(
+                model='qwen-max',  # 或 'qwen-plus', 'qwen-turbo'
+                messages=[{
+                    "role": "user",
+                    "content": prompt
+                }],
+                result_format='message',
+                stream=True,
+                temperature=0.7,
+                top_p=0.95,
+                max_tokens=1500,
+                stop=None,
+                repetition_penalty=1.0,
+                top_k=None,
+                enable_search=False,
+                incremental_output=True
             )
             
-            # 处理流式响应
-            for line in response.iter_lines(decode_unicode=True):
-                if line:
-                    line = line.strip()  # 去除可能的空白字符
-                    if line.startswith('data: '):
-                        line = line[6:]  # 移除'data: '前缀
-                        try:
-                            json_response = json.loads(line)
-                            if 'choices' in json_response and 'delta' in json_response['choices'][0]:
-                                response_text = json_response['choices'][0]['delta']['content']
-                                # 逐个字符输出，并在适当的位置添加换行符
-                                for char in response_text:
-                                    if char == '\n':
-                                        yield ' '  # 将换行符替换为空格，避免前端显示问题
-                                    else:
-                                        yield char
-                        except json.JSONDecodeError as e:
-                            app.logger.error(f"JSON decode error: {e}, Line: {line}")
+            app.logger.debug("Stream created successfully for gen")
+            
+            for chunk in response:
+                if chunk.status_code == HTTPStatus.OK:
+                    if hasattr(chunk.output, 'choices') and \
+                       len(chunk.output.choices) > 0 and \
+                       hasattr(chunk.output.choices[0], 'message') and \
+                       'content' in chunk.output.choices[0].message:
+                        content = chunk.output.choices[0].message['content']
+                        app.logger.debug(f"Yielding chunk: {content}")
+                        yield content
+                else:
+                    error_msg = f"Error: {chunk.code} {chunk.message}"
+                    app.logger.error(error_msg)
+                    yield error_msg
+                    
         except Exception as e:
             app.logger.error(f"Error in generate_stream: {e}")
-            yield str(e)  # 直接yield错误信息
+            yield f"Error: {str(e)}"
+    
+    return Response(generate_stream(), mimetype='text/plain')
 
-    return Response(generate_stream_inner(prompt), mimetype='text/event-stream')
+@app.route('/gen2', methods=['POST'])
+def generate2():
+    data = request.json
+    prompt = data.get('prompt', '')
+    app.logger.debug(f"Received prompt for gen2: {prompt}")
+    
+    # 临时切换到第二个API密钥
+    original_api_key = dashscope.api_key
+    dashscope.api_key = API_KEY_2
+    
+    def generate_stream():
+        try:
+            response = dashscope.Generation.call(
+                model='qwen-turbo',  # 使用较轻量的模型
+                messages=[{
+                    "role": "user",
+                    "content": prompt
+                }],
+                result_format='message',
+                stream=True,
+                temperature=0.8,  # 可以调整参数
+                top_p=0.95,
+                max_tokens=1500,
+                stop=None,
+                repetition_penalty=1.0,
+                top_k=None,
+                enable_search=False,
+                incremental_output=True
+            )
+            
+            app.logger.debug("Stream created successfully for gen2")
+            
+            for chunk in response:
+                if chunk.status_code == HTTPStatus.OK:
+                    if hasattr(chunk.output, 'choices') and \
+                       len(chunk.output.choices) > 0 and \
+                       hasattr(chunk.output.choices[0], 'message') and \
+                       'content' in chunk.output.choices[0].message:
+                        content = chunk.output.choices[0].message['content']
+                        app.logger.debug(f"Yielding chunk: {content}")
+                        yield content
+                else:
+                    error_msg = f"Error: {chunk.code} {chunk.message}"
+                    app.logger.error(error_msg)
+                    yield error_msg
+                    
+        except Exception as e:
+            app.logger.error(f"Error in generate_stream: {e}")
+            yield f"Error: {str(e)}"
+        finally:
+            # 恢复原始API密钥
+            dashscope.api_key = original_api_key
+    
+    return Response(generate_stream(), mimetype='text/plain')
 
 if __name__ == '__main__':
-    app.run(debug=True, port=20000, host="0.0.0.0")
+    app.run(debug=True, port=60000, host="0.0.0.0")

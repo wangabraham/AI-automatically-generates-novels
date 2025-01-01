@@ -1,15 +1,34 @@
 from flask import Flask, request, Response, render_template
-import requests
-import json
+from openai import OpenAI
 import logging
-import time
 
 app = Flask(__name__)
 logging.basicConfig(level=logging.DEBUG)
 
-# DoBe API configuration
-DOBE_API_URL = "https://www.doubao.com/api/chat/completions"  # 请替换为实际的豆包API地址
-API_KEY = "YOUR_API_KEY"  # 请替换为您的豆包API密钥
+# API Configurations
+API_ENDPOINT_1 = 'https://api.doubao.com/v1'  # 豆包API端点
+API_KEY_1 = 'xxxx'  # 豆包API密钥
+API_ENDPOINT_2 = API_ENDPOINT_1 
+API_KEY_2 = 'xxxx'  # 可以使用不同的API密钥
+
+# Initialize OpenAI-compatible clients
+client1 = OpenAI(
+    base_url=API_ENDPOINT_1,
+    api_key=API_KEY_1,
+    default_headers={
+        "Content-Type": "application/json",
+        "Accept": "text/event-stream",
+    }
+)
+
+client2 = OpenAI(
+    base_url=API_ENDPOINT_2,
+    api_key=API_KEY_2,
+    default_headers={
+        "Content-Type": "application/json",
+        "Accept": "text/event-stream",
+    }
+)
 
 @app.route('/')
 def index():
@@ -19,70 +38,71 @@ def index():
 def generate():
     data = request.json
     prompt = data.get('prompt', '')
-    app.logger.debug(f"Received prompt: {prompt}")
+    app.logger.debug(f"Received prompt for gen: {prompt}")
     
     def generate_stream():
         try:
-            headers = {
-                "Authorization": f"Bearer {API_KEY}",
-                "Content-Type": "application/json"
-            }
-            
-            payload = {
-                "model": "doubao-001",  # 请替换为实际的模型名称
-                "messages": [
-                    {"role": "user", "content": prompt}
-                ],
-                "stream": True,
-                "temperature": 0.7,
-                "top_p": 0.95,
-                "max_tokens": 1024
-            }
-            
-            response = requests.post(
-                DOBE_API_URL,
-                headers=headers,
-                json=payload,
-                stream=True
+            completion = client1.chat.completions.create(
+                model="doubao-text-v1",  # 豆包模型名称
+                messages=[{
+                    "role": "user",
+                    "content": prompt
+                }],
+                stream=True,
+                temperature=0.7,
+                top_p=0.95,
+                frequency_penalty=0,
+                presence_penalty=0,
+                max_tokens=4096
             )
-            app.logger.debug(f"DoBe API response status: {response.status_code}")
             
-            for line in response.iter_lines():
-                if line:
-                    try:
-                        # 移除 "data: " 前缀（如果存在）
-                        line_str = line.decode('utf-8')
-                        if line_str.startswith("data: "):
-                            line_str = line_str[6:]
-                        
-                        # 跳过心跳消息
-                        if line_str == "[DONE]":
-                            continue
-                            
-                        json_response = json.loads(line_str)
-                        
-                        # 提取响应文本并转换为与原格式兼容的格式
-                        if 'choices' in json_response and len(json_response['choices']) > 0:
-                            content = json_response['choices'][0].get('delta', {}).get('content', '')
-                            if content:
-                                # 转换为与原来格式兼容的响应
-                                compatible_response = {
-                                    'response': content
-                                }
-                                app.logger.debug(f"Yielding response: {content}")
-                                yield json.dumps(compatible_response) + '\n'
-                                
-                    except json.JSONDecodeError as e:
-                        app.logger.error(f"JSON decode error: {e}, Line: {line}")
-                        
+            app.logger.debug("Stream created successfully for gen")
+            
+            for chunk in completion:
+                if chunk.choices[0].delta.content is not None:
+                    app.logger.debug(f"Yielding chunk: {chunk.choices[0].delta.content}")
+                    yield chunk.choices[0].delta.content
+                    
         except Exception as e:
             app.logger.error(f"Error in generate_stream: {e}")
-            error_response = {
-                'response': f"Error: {str(e)}"
-            }
-            yield json.dumps(error_response) + '\n'
+            yield f"Error: {str(e)}"
+    
+    return Response(generate_stream(), mimetype='text/plain')
 
-    return Response(generate_stream(), mimetype='application/json')
+@app.route('/gen2', methods=['POST'])
+def generate2():
+    data = request.json
+    prompt = data.get('prompt', '')
+    app.logger.debug(f"Received prompt for gen2: {prompt}")
+    
+    def generate_stream():
+        try:
+            completion = client2.chat.completions.create(
+                model="doubao-text-v1",  # 可以使用不同的模型版本
+                messages=[{
+                    "role": "user",
+                    "content": prompt
+                }],
+                stream=True,
+                temperature=0.8,  # 可以调整参数
+                top_p=0.95,
+                frequency_penalty=0,
+                presence_penalty=0,
+                max_tokens=4096
+            )
+            
+            app.logger.debug("Stream created successfully for gen2")
+            
+            for chunk in completion:
+                if chunk.choices[0].delta.content is not None:
+                    app.logger.debug(f"Yielding chunk: {chunk.choices[0].delta.content}")
+                    yield chunk.choices[0].delta.content
+                    
+        except Exception as e:
+            app.logger.error(f"Error in generate_stream: {e}")
+            yield f"Error: {str(e)}"
+    
+    return Response(generate_stream(), mimetype='text/plain')
 
 if __name__ == '__main__':
-    app.run(debug=True, port=20000, host="0.0.0.0")
+    app.run(debug=True, port=60000, host="0.0.0.0")

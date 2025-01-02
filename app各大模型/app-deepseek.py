@@ -1,24 +1,19 @@
-# pip3 install flask requests sseclient-py
 from flask import Flask, request, Response, render_template
 import requests
 import json
 import logging
-import sseclient
 
 app = Flask(__name__)
 logging.basicConfig(level=logging.DEBUG)
 
 # API Configurations
-API_ENDPOINT_1 = 'http://XXXX'
-API_KEY_1 = 'xxxx'
-API_ENDPOINT_2 = API_ENDPOINT_1
-API_KEY_2 = API_KEY_1
+API_ENDPOINT = 'https://api.deepseek.com/v1/chat/completions'
+API_KEY = 'sk-5f0308f72b384ef2b2f0fce359865cb0'
 
-def create_headers(api_key):
+def create_headers():
     return {
-        'Authorization': f'Bearer {api_key}',
-        'Content-Type': 'application/json',
-        'Accept': 'text/event-stream'
+        "Content-Type": "application/json",
+        "Authorization": f"Bearer {API_KEY}"
     }
 
 @app.route('/')
@@ -33,53 +28,52 @@ def generate():
     
     def generate_stream():
         try:
-            # 最新的 Deepseek API payload 结构
             payload = {
-                "model": "deepseek-chat",  # 或使用其他可用模型如 deepseek-coder
-                "messages": [
-                    {
-                        "role": "user",
-                        "content": prompt
-                    }
-                ],
+                "model": "deepseek-chat",
+                "messages": [{"role": "user", "content": prompt}],
                 "stream": True,
-                "temperature": 0.7,
-                "top_p": 0.95,
-                "max_tokens": 2048,
-                "presence_penalty": 0,
-                "frequency_penalty": 0,
-                "stop": None
+                "temperature": 0.7
             }
             
             response = requests.post(
-                f"{API_ENDPOINT_1}/v1/chat/completions",
-                headers=create_headers(API_KEY_1),
+                API_ENDPOINT,
+                headers=create_headers(),
                 json=payload,
                 stream=True
             )
             
+            if response.status_code != 200:
+                error_msg = f"API error: {response.status_code} - {response.text}"
+                app.logger.error(error_msg)
+                yield error_msg
+                return
+
             app.logger.debug("Stream created successfully for gen")
             
-            client = sseclient.SSEClient(response)
-            
-            for event in client.events():
-                if event.data != "[DONE]":
+            for line in response.iter_lines():
+                if line:
+                    line = line.decode('utf-8')
+                    if line.startswith("data: "):
+                        line = line[6:]
+                    
+                    if line.strip() == '[DONE]':
+                        continue
+                    
                     try:
-                        chunk_data = json.loads(event.data)
-                        # 处理最新的响应格式
-                        if 'choices' in chunk_data and chunk_data['choices']:
-                            if 'delta' in chunk_data['choices'][0]:
-                                content = chunk_data['choices'][0]['delta'].get('content', '')
-                                if content:
-                                    app.logger.debug(f"Yielding chunk: {content}")
-                                    yield content
+                        json_data = json.loads(line)
+                        if 'choices' in json_data and len(json_data['choices']) > 0:
+                            content = json_data['choices'][0].get('delta', {}).get('content')
+                            if content:
+                                app.logger.debug(f"Yielding chunk: {content}")
+                                yield content
                     except json.JSONDecodeError as e:
                         app.logger.error(f"JSON decode error: {e}")
                         continue
-                        
+                    
         except Exception as e:
-            app.logger.error(f"Error in generate_stream: {e}")
-            yield f"Error: {str(e)}"
+            error_msg = f"Error in generate_stream: {str(e)}"
+            app.logger.error(error_msg)
+            yield error_msg
     
     return Response(generate_stream(), mimetype='text/plain')
 
@@ -91,54 +85,54 @@ def generate2():
     
     def generate_stream():
         try:
-            # 可以为 gen2 配置不同的参数
             payload = {
-                "model": "deepseek-chat",  # 可以使用不同的模型
-                "messages": [
-                    {
-                        "role": "user",
-                        "content": prompt
-                    }
-                ],
+                "model": "deepseek-chat",
+                "messages": [{"role": "user", "content": prompt}],
                 "stream": True,
-                "temperature": 0.8,  # 可以调整参数
-                "top_p": 0.95,
-                "max_tokens": 4096,  # 可以根据需要调整
-                "presence_penalty": 0,
-                "frequency_penalty": 0,
-                "stop": None
+                "temperature": 0.7
             }
             
             response = requests.post(
-                f"{API_ENDPOINT_2}/v1/chat/completions",
-                headers=create_headers(API_KEY_2),
+                API_ENDPOINT,
+                headers=create_headers(),
                 json=payload,
                 stream=True
             )
             
+            if response.status_code != 200:
+                error_msg = f"API error: {response.status_code} - {response.text}"
+                app.logger.error(error_msg)
+                yield error_msg
+                return
+
             app.logger.debug("Stream created successfully for gen2")
             
-            client = sseclient.SSEClient(response)
-            
-            for event in client.events():
-                if event.data != "[DONE]":
+            for line in response.iter_lines():
+                if line:
+                    line = line.decode('utf-8')
+                    if line.startswith("data: "):
+                        line = line[6:]
+                    
+                    if line.strip() == '[DONE]':
+                        continue
+                    
                     try:
-                        chunk_data = json.loads(event.data)
-                        if 'choices' in chunk_data and chunk_data['choices']:
-                            if 'delta' in chunk_data['choices'][0]:
-                                content = chunk_data['choices'][0]['delta'].get('content', '')
-                                if content:
-                                    app.logger.debug(f"Yielding chunk: {content}")
-                                    yield content
+                        json_data = json.loads(line)
+                        if 'choices' in json_data and len(json_data['choices']) > 0:
+                            content = json_data['choices'][0].get('delta', {}).get('content')
+                            if content:
+                                app.logger.debug(f"Yielding chunk: {content}")
+                                yield content
                     except json.JSONDecodeError as e:
                         app.logger.error(f"JSON decode error: {e}")
                         continue
-                        
+                    
         except Exception as e:
-            app.logger.error(f"Error in generate_stream: {e}")
-            yield f"Error: {str(e)}"
+            error_msg = f"Error in generate_stream: {str(e)}"
+            app.logger.error(error_msg)
+            yield error_msg
     
     return Response(generate_stream(), mimetype='text/plain')
 
 if __name__ == '__main__':
-    app.run(debug=True, port=60000, host="0.0.0.0")
+    app.run(debug=True, port=60001, host="0.0.0.0")

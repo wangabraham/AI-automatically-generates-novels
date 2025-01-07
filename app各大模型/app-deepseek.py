@@ -8,7 +8,7 @@ logging.basicConfig(level=logging.DEBUG)
 
 # API Configurations
 API_ENDPOINT = 'https://api.deepseek.com/v1/chat/completions'
-API_KEY = 'sk-5f0308f72b384ef2b2f0fce359865cb0'
+API_KEY = 'sk-xxxxx'
 
 def create_headers():
     return {

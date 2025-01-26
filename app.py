@@ -7,7 +7,7 @@ logging.basicConfig(level=logging.DEBUG)
 
 # DeepSeek API 配置
 DEEPSEEK_API_ENDPOINT = 'https://api.deepseek.com/v1'  # DeepSeek 的 API 地址
-DEEPSEEK_API_KEY = '你的API密钥'  # 替换为你的 DeepSeek API 密钥
+DEEPSEEK_API_KEY = 'sk-ba0a6554cb744db583fa982e15643656'  # 替换为你的 DeepSeek API 密钥
 
 # 初始化 DeepSeek 客户端
 deepseek_client = OpenAI(

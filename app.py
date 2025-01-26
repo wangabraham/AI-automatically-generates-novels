@@ -5,25 +5,14 @@ import logging
 app = Flask(__name__)
 logging.basicConfig(level=logging.DEBUG)
 
-# API Configurations
-API_ENDPOINT_1 = 'http://xxxx/v1'
-API_KEY_1 = 'xxxx'
-#用于好一点的大模型
+# DeepSeek API 配置
+DEEPSEEK_API_ENDPOINT = 'https://api.deepseek.com/v1'  # DeepSeek 的 API 地址
+DEEPSEEK_API_KEY = '你的API密钥'  # 替换为你的 DeepSeek API 密钥
 
-
-API_ENDPOINT_2 = 'http://xxxx/v1'
-API_KEY_2 = '-xxx'
-#用于低成本的大模型拆书、ai自我迭代的
-
-# Initialize OpenAI clients
-client1 = OpenAI(
-    base_url=API_ENDPOINT_1,
-    api_key=API_KEY_1
-)
-
-client2 = OpenAI(
-    base_url=API_ENDPOINT_2,
-    api_key=API_KEY_2
+# 初始化 DeepSeek 客户端
+deepseek_client = OpenAI(
+    base_url=DEEPSEEK_API_ENDPOINT,
+    api_key=DEEPSEEK_API_KEY
 )
 
 @app.route('/')
@@ -31,17 +20,19 @@ def index():
     return render_template('index.html')
 
 @app.route('/gen', methods=['POST'])
-#/gen接口这个可以是效果比较好的模型接口，用于大纲、章节、正文的生成
-
 def generate():
+    """
+    /gen 接口：用于生成小说大纲、章节、正文等内容
+    """
     data = request.json
     prompt = data.get('prompt', '')
     app.logger.debug(f"Received prompt for gen: {prompt}")
     
     def generate_stream():
         try:
-            completion = client1.chat.completions.create(
-                model="Qwen2.5-72B-Instruct",
+            # 调用 DeepSeek 的 R1 模型
+            completion = deepseek_client.chat.completions.create(
+                model="deepseek-r1",  # 使用 DeepSeek 的 R1 模型
                 messages=[{"role": "user", "content": prompt}],
                 stream=True
             )
@@ -60,17 +51,19 @@ def generate():
     return Response(generate_stream(), mimetype='text/plain')
 
 @app.route('/gen2', methods=['POST'])
-#/gen2这个可以自己替换低成本模型的接口，用于AI批量自我迭代【探索】和拆书
-
 def generate2():
+    """
+    /gen2 接口：用于低成本模型的批量生成或拆书
+    """
     data = request.json
     prompt = data.get('prompt', '')
     app.logger.debug(f"Received prompt for gen2: {prompt}")
     
     def generate_stream():
         try:
-            completion = client2.chat.completions.create(
-                model="Qwen2.5-72B-Instruct",
+            # 调用 DeepSeek 的 R1 模型（或其他低成本模型）
+            completion = deepseek_client.chat.completions.create(
+                model="deepseek-r1",  # 使用 DeepSeek 的 R1 模型
                 messages=[{"role": "user", "content": prompt}],
                 stream=True
             )
